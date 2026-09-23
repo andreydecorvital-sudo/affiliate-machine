@@ -3,6 +3,7 @@ import { getFeatureGates } from "@/lib/feature-gates";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppGroupMessage } from "@/lib/whatsapp/bridge";
 import { recordOperationalEvent } from "@/lib/events";
+import { revalidatePostBeforeFirstSend } from "@/lib/distribution/revalidate";
 
 type ClaimedDelivery = {
   delivery_id: string;
@@ -47,17 +48,29 @@ export async function processNextDelivery() {
 
   const delivery = (Array.isArray(data) ? data[0] : null) as ClaimedDelivery | null;
   if (!delivery) {
+    const { data: quota } = await supabase.rpc("distribution_quota_status");
     return {
       status: "idle" as const,
-      sent: false
+      sent: false,
+      quota: Array.isArray(quota) ? quota[0] ?? null : quota
     };
   }
 
   try {
+    const validation = await revalidatePostBeforeFirstSend(delivery.post_id);
+    if (!validation.valid) {
+      return {
+        status: "cancelled" as const,
+        sent: false,
+        deliveryId: delivery.delivery_id,
+        reason: validation.reason
+      };
+    }
+
     const result = await sendWhatsAppGroupMessage({
       accountId: delivery.account_id,
       jid: delivery.group_jid,
-      message: delivery.content,
+      message: validation.content ?? delivery.content,
       idempotencyKey: delivery.idempotency_key
     });
 
