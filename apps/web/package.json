@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@affiliate/core": "workspace:*",
+    "@affiliate/intelligence": "workspace:*",
     "@affiliate/providers": "workspace:*",
     "@google/genai": "2.24.0",
     "@supabase/ssr": "0.12.7",
