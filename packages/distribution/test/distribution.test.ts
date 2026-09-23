@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   buildDeterministicOfferMessage,
   createDeliveryIdempotencyKey,
+  createTrackingTag,
   retryDelaySeconds
 } from "../src/index.ts";
 
@@ -30,6 +31,14 @@ test("delivery idempotency key is stable", () => {
     createDeliveryIdempotencyKey("post-1", "group-1"),
     createDeliveryIdempotencyKey("post-1", "group-2")
   );
+});
+
+test("tracking tags are stable and compact", () => {
+  assert.equal(
+    createTrackingTag("g", "group-123"),
+    createTrackingTag("g", "group-123")
+  );
+  assert.match(createTrackingTag("p", "post-123"), /^p_[a-f0-9]{10}$/);
 });
 
 test("retry delay backs off and caps", () => {
