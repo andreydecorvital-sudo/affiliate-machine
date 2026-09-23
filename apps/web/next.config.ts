@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@affiliate/core",
     "@affiliate/providers",
-    "@affiliate/intelligence"
+    "@affiliate/intelligence",
+    "@affiliate/attribution"
   ],
   poweredByHeader: false
 };
