@@ -8,9 +8,9 @@
 
 `MONEY ENGINE FIRST`
 
-O backend econômico já cobre descoberta, score, distribuição, aquisição, atribuição e analytics.
+O backend econômico já cobre descoberta, score, distribuição, aquisição, atribuição, analytics e aprendizado.
 Visual relevante continua adiado até validação real de:
-`hunter → offer → score → tracked delivery → click → conversion → commission → EPC/CAC`.
+`hunter → conversion sync → learning → score → tracked delivery → click → commission → EPC/CAC`.
 
 ## Capability status
 
@@ -31,7 +31,12 @@ Visual relevante continua adiado até validação real de:
 - Discovery niche/origin memory: CODE_READY / LIVE_DB_PENDING
 - Offer snapshots: CODE_READY / LIVE_DB_PENDING
 - Affiliate link + Shopee subIds: CODE_READY / LIVE_API_PENDING
-- Score engine: CODE_READY / LIVE_DATA_PENDING
+- Score engine v1.1: CODE_READY / LIVE_DATA_PENDING
+- Product learning metrics: CODE_READY / LIVE_DATA_PENDING
+- Strategy learning metrics: CODE_READY / LIVE_DATA_PENDING
+- Bayesian CVR/RPC smoothing: CODE_READY / LIVE_DATA_PENDING
+- Sample-confidence weighting: CODE_READY / LIVE_DATA_PENDING
+- Learned Hunter effective rank: CODE_READY / LIVE_DATA_PENDING
 - Recent publication penalty: CODE_READY / LIVE_DATA_PENDING
 - 7-day product cooldown: CODE_READY / LIVE_DATA_PENDING
 - Opportunity decisions: CODE_READY / LIVE_DATA_PENDING
@@ -58,9 +63,12 @@ Visual relevante continua adiado até validação real de:
 - WhatsApp pairing + explicit group activation: PENDING
 - one controlled end-to-end canary: PENDING
 
+### Next code opportunity
+- CAC / paid-traffic analytics: NEXT
+- experiment engine for copy/timing/group allocation: NEXT
+- Meta Ads read-only ingestion: NEXT
+
 ### Later
-- Meta Ads read analytics / CAC: PLANNED
-- Learning/experiments: PLANNED
 - TikTok/Amazon affiliate providers: FUTURE
 
 ### Deferred
@@ -78,6 +86,7 @@ Visual relevante continua adiado até validação real de:
 - PR #7 — Money Analytics
 - PR #8 — Money Cycle Orchestrator
 - PR #9 — Hunter Strategies / Origin Memory / Cooldown
+- PR #10 — Learning Engine / Money Feedback Loop
 
 ## Evidence
 
@@ -89,6 +98,7 @@ Visual relevante continua adiado até validação real de:
 - Money Analytics CI: typecheck ✅ tests ✅ build ✅
 - Money Cycle CI: typecheck ✅ tests ✅ build ✅
 - Hunter Strategies CI: typecheck ✅ tests ✅ build ✅
+- Learning Engine CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
