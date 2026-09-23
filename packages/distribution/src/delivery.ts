@@ -16,6 +16,15 @@ export function createDeliveryIdempotencyKey(postId: string, groupId: string): s
   return `delivery:${digest}`;
 }
 
+export function createTrackingTag(prefix: string, value: string, length = 10): string {
+  const digest = createHash("sha256")
+    .update(value)
+    .digest("hex")
+    .slice(0, Math.min(Math.max(length, 6), 20));
+
+  return `${prefix}_${digest}`;
+}
+
 export function retryDelaySeconds(attempt: number): number {
   const safeAttempt = Math.max(1, Math.trunc(attempt));
   return Math.min(3600, 30 * 2 ** (safeAttempt - 1));
