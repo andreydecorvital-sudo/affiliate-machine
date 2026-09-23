@@ -453,14 +453,22 @@ begin
   limit 1;
 
   if chosen.id is null then
+    return query select
+      null::uuid,
+      null::text,
+      null::text,
+      '{}'::jsonb,
+      null::integer;
     return;
   end if;
 
   bucket := mod(
-    abs(hashtextextended(
-      p_post_id::text || '|' || chosen.id::text,
-      0
-    )),
+    abs(
+      hashtextextended(
+        p_post_id::text || '|' || chosen.id::text,
+        0
+      )::numeric
+    ),
     10000
   )::integer;
 
@@ -837,7 +845,10 @@ begin
           select 1 from exploit x where x.id = c.id
         )
       order by c.exploration_key
-      limit exploration_groups
+      limit greatest(
+        0,
+        max_groups - (select count(*)::integer from exploit)
+      )
     ),
     treatment_selected as (
       select * from exploit
