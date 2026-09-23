@@ -4,20 +4,26 @@
 
 `PHASE 0 — FOUNDATION BUILDING`
 
+## Strategic priority
+
+`MONEY ENGINE FIRST`
+
+Nenhum trabalho visual relevante deve preceder a validação do ciclo:
+`offer → affiliate link → distribution → click → conversion → commission → CAC/LTV`.
+
 ## Capability status
 
 - Platform foundation: BUILDING
-- Next.js/Vercel surface: BUILDING
+- Next.js/Vercel minimal surface: BUILDING
 - PostgreSQL schema: BUILDING
 - Supabase Queues: BUILDING
 - Supabase Cron: BUILDING
 - Universal events: BUILDING
 - Audit/idempotency: BUILDING
 - Gemini adapter: BUILDING
-- Shopee Affiliate provider: PLANNED
-- Offer snapshots: PLANNED
-- Score engine: PLANNED
-- Creative engine: PLANNED
+- Shopee Affiliate provider: NEXT
+- Offer snapshots: NEXT
+- Score engine: NEXT
 - WhatsApp multi-session: PLANNED
 - Groups/capacity: PLANNED
 - Posts/deliveries: PLANNED
@@ -26,8 +32,8 @@
 - Commission ledger: PLANNED
 - Landing/group router: PLANNED
 - Cohorts: PLANNED
-- Operational frontend: PLANNED
-- Platform Admin: PLANNED
+- Operational frontend: DEFERRED_UNTIL_MONEY_LOOP
+- Platform Admin visual: DEFERRED_UNTIL_MONEY_LOOP
 - Meta Ads: PLANNED
 - Learning/experiments: PLANNED
 
