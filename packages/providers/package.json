@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./shopee": "./src/shopee/index.ts"
+    "./shopee": "./src/shopee/index.ts",
+    "./meta": "./src/meta/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
