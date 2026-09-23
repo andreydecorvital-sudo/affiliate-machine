@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppGroupMessage } from "@/lib/whatsapp/bridge";
 import { recordOperationalEvent } from "@/lib/events";
 import { revalidatePostBeforeFirstSend } from "@/lib/distribution/revalidate";
+import { prepareDeliveryTracking } from "@/lib/distribution/delivery-tracking";
 
 type ClaimedDelivery = {
   delivery_id: string;
@@ -67,10 +68,15 @@ export async function processNextDelivery() {
       };
     }
 
+    const tracked = await prepareDeliveryTracking({
+      deliveryId: delivery.delivery_id,
+      baseContent: validation.content ?? delivery.content
+    });
+
     const result = await sendWhatsAppGroupMessage({
       accountId: delivery.account_id,
       jid: delivery.group_jid,
-      message: validation.content ?? delivery.content,
+      message: tracked.content,
       idempotencyKey: delivery.idempotency_key
     });
 
@@ -91,6 +97,7 @@ export async function processNextDelivery() {
         postId: delivery.post_id,
         groupId: delivery.group_id,
         accountId: delivery.account_id,
+        trackingKey: tracked.trackingKey,
         confirmed: result.confirmed,
         ack: result.ack,
         messageId: result.messageId,
@@ -102,6 +109,7 @@ export async function processNextDelivery() {
       status: finalStatus,
       sent: true,
       deliveryId: delivery.delivery_id,
+      trackingKey: tracked.trackingKey,
       messageId: result.messageId
     };
   } catch (error) {
