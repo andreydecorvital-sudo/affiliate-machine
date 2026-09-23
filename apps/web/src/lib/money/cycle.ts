@@ -1,6 +1,7 @@
 import { syncShopeeOffers, syncShopeeConversions } from "@/lib/shopee/sync";
 import { runHunter } from "@/lib/hunter/run";
 import { refreshLearningMetrics } from "@/lib/learning/learning";
+import { refreshDistributionPerformance } from "@/lib/distribution/learning";
 import { scoreUnscoredOffers } from "@/lib/intelligence/score-sync";
 import { materializePublishablePosts } from "@/lib/distribution/materialize";
 import { processNextDelivery } from "@/lib/distribution/process";
@@ -16,6 +17,7 @@ type MoneyCycleInput = {
   deliveryLimit?: number;
   conversionDays?: number;
   learningDays?: number;
+  distributionLearningDays?: number;
   syncConversions?: boolean;
   niche?: string;
 };
@@ -100,6 +102,10 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
     Math.max(input.learningDays ?? 90, 7),
     365
   );
+  const distributionLearningDays = Math.min(
+    Math.max(input.distributionLearningDays ?? 90, 7),
+    365
+  );
   const niche = input.niche?.trim() || "general";
   const keyword = input.keyword?.trim() || null;
 
@@ -146,6 +152,10 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
     refreshLearningMetrics(learningDays)
   );
 
+  const distributionLearning = await runStep(() =>
+    refreshDistributionPerformance(distributionLearningDays)
+  );
+
   const scoring = await runStep(() => scoreUnscoredOffers(scoreLimit));
 
   const materialization = await runStep(() =>
@@ -175,6 +185,7 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
       deliveryLimit,
       conversionDays,
       learningDays,
+      distributionLearningDays,
       syncConversions: input.syncConversions !== false,
       niche
     },
@@ -182,6 +193,7 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
       offers,
       conversions,
       learning,
+      distributionLearning,
       scoring,
       materialization,
       distribution,

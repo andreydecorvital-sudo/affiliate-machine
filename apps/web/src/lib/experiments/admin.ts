@@ -57,6 +57,47 @@ export async function createMessageExperiment(
   return { experiment, variants: variants ?? [] };
 }
 
+async function assertNoDistributionOverlap(
+  niche: string | null
+) {
+  const supabase = createSupabaseAdminClient();
+
+  const base = () =>
+    supabase
+      .from("distribution_experiments")
+      .select("id,name,kind,niche")
+      .eq("status", "running");
+
+  if (!niche) {
+    const { data, error } = await base();
+    if (error) throw error;
+
+    if ((data ?? []).length > 0) {
+      throw new Error(
+        "A global message-copy experiment would overlap a running distribution experiment."
+      );
+    }
+    return;
+  }
+
+  const [exact, global] = await Promise.all([
+    base().eq("niche", niche),
+    base().is("niche", null)
+  ]);
+
+  const error = exact.error || global.error;
+  if (error) throw error;
+
+  if (
+    (exact.data ?? []).length > 0 ||
+    (global.data ?? []).length > 0
+  ) {
+    throw new Error(
+      "A running distribution experiment overlaps this niche."
+    );
+  }
+}
+
 export async function setExperimentStatus(
   experimentId: string,
   status: "running" | "paused" | "completed"
@@ -80,7 +121,9 @@ export async function setExperimentStatus(
 
     if (variantError) throw variantError;
     if ((count ?? 0) < 2) {
-      throw new Error("Experiment needs at least two active variants.");
+      throw new Error(
+        "Experiment needs at least two active variants."
+      );
     }
 
     let activeQuery = supabase
@@ -94,13 +137,19 @@ export async function setExperimentStatus(
       ? activeQuery.eq("niche", experiment.niche)
       : activeQuery.is("niche", null);
 
-    const { data: conflicts, error: conflictError } = await activeQuery;
+    const { data: conflicts, error: conflictError } =
+      await activeQuery;
+
     if (conflictError) throw conflictError;
     if ((conflicts ?? []).length > 0) {
       throw new Error(
         "Another message-copy experiment is already running for this scope."
       );
     }
+
+    await assertNoDistributionOverlap(
+      experiment.niche ?? null
+    );
   }
 
   const patch: Record<string, unknown> = {
@@ -108,8 +157,14 @@ export async function setExperimentStatus(
     updated_at: new Date().toISOString()
   };
 
-  if (status === "running") patch.starts_at = new Date().toISOString();
-  if (status === "completed") patch.ends_at = new Date().toISOString();
+  if (status === "running") {
+    patch.starts_at = new Date().toISOString();
+    patch.ends_at = null;
+  }
+
+  if (status === "completed") {
+    patch.ends_at = new Date().toISOString();
+  }
 
   const { data, error } = await supabase
     .from("experiments")
@@ -135,11 +190,14 @@ export async function listExperiments() {
   return data ?? [];
 }
 
-export async function getExperimentPerformance(experimentId: string) {
+export async function getExperimentPerformance(
+  experimentId: string
+) {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.rpc("experiment_performance", {
-    p_experiment_id: experimentId
-  });
+  const { data, error } = await supabase.rpc(
+    "experiment_performance",
+    { p_experiment_id: experimentId }
+  );
 
   if (error) throw error;
   return data ?? [];
