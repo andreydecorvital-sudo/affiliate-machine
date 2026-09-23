@@ -8,9 +8,9 @@
 
 `MONEY ENGINE FIRST`
 
-O backend econômico já cobre descoberta, score, distribuição, aquisição, atribuição, analytics e aprendizado.
+O backend econômico já cobre descoberta, score, distribuição, aquisição, atribuição, analytics, aprendizado, tráfego pago e experimentação segura.
 Visual relevante continua adiado até validação real de:
-`hunter → conversion sync → learning → score → tracked delivery → click → commission → EPC/CAC`.
+`hunter → conversion sync → learning → score → tracked delivery → click → commission → EPC/CAC/experiments`.
 
 ## Capability status
 
@@ -54,6 +54,13 @@ Visual relevante continua adiado até validação real de:
 - Conservative conversion attribution: CODE_READY / LIVE_CONVERSION_PENDING
 - EPC/group money analytics: CODE_READY / LIVE_DATA_PENDING
 - Money Cycle orchestrator: CODE_READY / LIVE_RUN_PENDING
+- Paid traffic spend ingestion: CODE_READY / LIVE_DATA_PENDING
+- Campaign cost-per-routed-visit: CODE_READY / LIVE_DATA_PENDING
+- Modeled spend allocation by group: CODE_READY / LIVE_DATA_PENDING
+- Modeled commission ROAS/net by group: CODE_READY / LIVE_DATA_PENDING
+- Message-copy Experiment Engine: CODE_READY / LIVE_SAMPLE_PENDING
+- Deterministic delivery assignment: CODE_READY / LIVE_SAMPLE_PENDING
+- Experiment CVR/RPC/commission metrics: CODE_READY / LIVE_SAMPLE_PENDING
 
 ### Next blocker
 - Dedicated Supabase project + migrations: PENDING_USER_INFRA_PHASE
@@ -64,9 +71,9 @@ Visual relevante continua adiado até validação real de:
 - one controlled end-to-end canary: PENDING
 
 ### Next code opportunity
-- CAC / paid-traffic analytics: NEXT
-- experiment engine for copy/timing/group allocation: NEXT
 - Meta Ads read-only ingestion: NEXT
+- timing experiments: NEXT
+- group-allocation experiments: NEXT
 
 ### Later
 - TikTok/Amazon affiliate providers: FUTURE
@@ -87,6 +94,7 @@ Visual relevante continua adiado até validação real de:
 - PR #8 — Money Cycle Orchestrator
 - PR #9 — Hunter Strategies / Origin Memory / Cooldown
 - PR #10 — Learning Engine / Money Feedback Loop
+- PR #11 — Paid Economics / Experiment Engine
 
 ## Evidence
 
@@ -99,11 +107,15 @@ Visual relevante continua adiado até validação real de:
 - Money Cycle CI: typecheck ✅ tests ✅ build ✅
 - Hunter Strategies CI: typecheck ✅ tests ✅ build ✅
 - Learning Engine CI: typecheck ✅ tests ✅ build ✅
+- Paid Economics / Experiment Engine CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
 Runtime/infrastructure target: Vercel + Supabase.
 Gemini remains the approved primary AI provider, with deterministic degradation when unavailable.
+
+Paid traffic economics keeps exact and modeled metrics separate.
+No Ads write path exists.
 
 ## Rule
 
