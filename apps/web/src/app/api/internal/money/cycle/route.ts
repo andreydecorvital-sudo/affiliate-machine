@@ -10,6 +10,7 @@ export const maxDuration = 300;
 const schema = z.object({
   keyword: z.string().trim().min(1).max(120).optional(),
   offerLimit: z.number().int().min(1).max(100).default(50),
+  hunterStrategyLimit: z.number().int().min(1).max(50).default(10),
   scoreLimit: z.number().int().min(1).max(500).default(100),
   materializeLimit: z.number().int().min(1).max(100).default(10),
   deliveryLimit: z.number().int().min(0).max(100).default(25),

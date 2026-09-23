@@ -5,11 +5,17 @@ import type {
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function persistShopeeOfferSnapshot(
-  offer: NormalizedShopeeOffer
+  offer: NormalizedShopeeOffer,
+  discovery: {
+    niche?: string;
+    strategyId?: string;
+  } = {}
 ): Promise<string> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase.rpc("persist_shopee_offer_snapshot", {
-    p_offer: offer
+    p_offer: offer,
+    p_discovery_niche: discovery.niche?.trim() || null,
+    p_discovery_strategy_id: discovery.strategyId ?? null
   });
 
   if (error) throw error;

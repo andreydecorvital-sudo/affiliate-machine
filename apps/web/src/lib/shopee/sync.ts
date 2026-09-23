@@ -12,13 +12,23 @@ import { createManagedShortLink } from "@/lib/attribution/short-links";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { recordOperationalEvent } from "@/lib/events";
 
-export async function syncShopeeOffers(params: ProductOfferParams = {}) {
+export async function syncShopeeOffers(
+  params: ProductOfferParams = {},
+  discovery: {
+    niche?: string;
+    strategyId?: string;
+    strategyName?: string;
+  } = {}
+) {
   const client = createShopeeAffiliateClient();
   const page = await client.getProductOffers(params);
 
   let persisted = 0;
   for (const offer of page.items) {
-    await persistShopeeOfferSnapshot(offer);
+    await persistShopeeOfferSnapshot(offer, {
+      niche: discovery.niche,
+      strategyId: discovery.strategyId
+    });
     persisted += 1;
   }
 
@@ -31,7 +41,10 @@ export async function syncShopeeOffers(params: ProductOfferParams = {}) {
       page: page.page,
       limit: page.limit,
       hasNextPage: page.hasNextPage,
-      keyword: params.keyword ?? null
+      keyword: params.keyword ?? null,
+      discoveryNiche: discovery.niche ?? null,
+      discoveryStrategyId: discovery.strategyId ?? null,
+      discoveryStrategyName: discovery.strategyName ?? null
     }
   });
 
