@@ -1,30 +1,40 @@
-# Roadmap
+# Roadmap — prioridade financeira
 
-| Fase | Entrega | Estado |
-|---|---|---|
-| 0 | Foundation + Project Brain | PLANNED |
-| 1 | Shopee Affiliate Core | PLANNED |
-| 2 | Score / Intelligence | PLANNED |
-| 3 | WhatsApp Multi-Group | PLANNED |
-| 4 | Shortlink / Attribution / Commission | PLANNED |
-| 5 | Landing / Group Router / Cohorts | PLANNED |
-| 6 | Frontend Zero operacional | PLANNED |
-| 7 | Platform Admin | PLANNED |
-| 8 | Meta Ads Analytics | PLANNED |
-| 9 | Learning / Experiments | PLANNED |
-| 10 | Providers e mídia adicionais | PLANNED |
+## Regra
 
-## Milestone MVP
+**Backend e ciclo de monetização primeiro. Visual depois.**
 
-MVP só está concluído quando conseguimos demonstrar ponta a ponta:
+O primeiro grande milestone não é "dashboard bonito"; é **comissão mensurável ponta a ponta**.
 
-1. Buscar oferta real Shopee.
-2. Persistir snapshot.
-3. Calcular score.
-4. Gerar link afiliado com tracking.
-5. Criar post.
-6. Entregar em pelo menos um grupo de teste.
-7. Registrar clique em shortlink.
-8. Importar conversão real ou sandbox/fixture equivalente validada.
-9. Reconciliar comissão.
-10. Mostrar dashboard com post → clique → conversão → comissão.
+| Fase | Entrega | Prioridade | Estado |
+|---|---|---:|---|
+| 0 | Foundation Vercel + Supabase + Gemini | P0 | BUILDING |
+| 1 | Shopee Affiliate Core | P0 | PLANNED |
+| 2 | Score / Intelligence | P0 | PLANNED |
+| 3 | WhatsApp Multi-Group | P0 | PLANNED |
+| 4 | Shortlink / Attribution / Commission | P0 | PLANNED |
+| 5 | Landing / Group Router / Cohorts | P0 | PLANNED |
+| 6 | Money Engine Validation | P0 | PLANNED |
+| 7 | Meta Ads / Scale Analytics | P1 | PLANNED |
+| 8 | Frontend Zero operacional | P2 | DEFERRED |
+| 9 | Platform Admin visual | P2 | DEFERRED |
+| 10 | Learning / TikTok / Amazon / vídeo | P1/P2 | PLANNED |
+
+## Milestone MONEY LOOP
+
+Só considerar o motor validado quando conseguirmos:
+
+1. buscar oferta real da Shopee;
+2. persistir snapshot;
+3. calcular score;
+4. gerar link afiliado com tracking;
+5. criar post;
+6. entregar em grupo de teste;
+7. registrar clique;
+8. importar conversão;
+9. reconciliar comissão;
+10. calcular EPC e comissão por post/grupo;
+11. ligar a origem de aquisição/coorte;
+12. responder em SQL/API quanto voltou para cada R$1 investido.
+
+A interface pode ser simples até esse milestone estar fechado.
