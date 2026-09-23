@@ -109,7 +109,7 @@ test("normalizes conversion report", async () => {
           }
         }
       }
-    }))
+    })
   });
 
   const page = await client.getConversionReport({
