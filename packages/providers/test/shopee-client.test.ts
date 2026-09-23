@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ShopeeAffiliateClient, type ShopeeHttpRequest } from "../src/shopee/client.ts";
+import { ShopeeAffiliateClient } from "../src/shopee/client.ts";
 
 test("normalizes productOfferV2 and signs the exact serialized body", async () => {
-  let captured: ShopeeHttpRequest | null = null;
-
   const client = new ShopeeAffiliateClient({
     appId: "app",
     secret: "secret",
     now: () => 1700000000000,
     transport: async (request) => {
-      captured = request;
+      assert.match(request.headers.Authorization, /^SHA256 Credential=app,/);
+      assert.equal(JSON.parse(request.body).operationName, "productOfferV2");
+
       return {
         status: 200,
         body: {
@@ -46,8 +46,6 @@ test("normalizes productOfferV2 and signs the exact serialized body", async () =
   assert.equal(page.items[0]?.productName, "Air Fryer");
   assert.equal(page.items[0]?.priceMin, 199.9);
   assert.equal(page.items[0]?.commissionRate, 0.12);
-  assert.match(captured?.headers.Authorization ?? "", /^SHA256 Credential=app,/);
-  assert.equal(JSON.parse(captured?.body ?? "{}").operationName, "productOfferV2");
 });
 
 test("generates short link with attribution subIds", async () => {
