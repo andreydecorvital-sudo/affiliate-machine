@@ -2,7 +2,7 @@ import type {
   NormalizedShopeeConversion,
   NormalizedShopeeOffer,
   ShopeeProductOfferRaw
-} from "./types.ts";
+} from "./types";
 
 function toNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
