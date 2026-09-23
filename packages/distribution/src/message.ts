@@ -47,3 +47,15 @@ export function buildDeterministicOfferMessage(input: OfferMessageInput): string
 
   return lines.join("\n").slice(0, 3900);
 }
+
+export function replaceOfferTrackingUrl(content: string, shortUrl: string): string {
+  const lines = content.split(/\r?\n/);
+  const index = lines.findIndex((line) => line.trim().startsWith("👉 "));
+
+  if (index >= 0) {
+    lines[index] = `👉 ${shortUrl}`;
+    return lines.join("\n").slice(0, 3900);
+  }
+
+  return `${content.trim()}\n\n👉 ${shortUrl}`.slice(0, 3900);
+}
