@@ -1,0 +1,12 @@
+{
+  "name": "affiliate-machine",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "echo 'Foundation not implemented yet'",
+    "build": "echo 'Foundation not implemented yet'",
+    "test": "echo 'Foundation not implemented yet'",
+    "lint": "echo 'Foundation not implemented yet'"
+  }
+}
