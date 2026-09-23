@@ -1,5 +1,6 @@
 import { syncShopeeOffers, syncShopeeConversions } from "@/lib/shopee/sync";
 import { runHunter } from "@/lib/hunter/run";
+import { refreshLearningMetrics } from "@/lib/learning/learning";
 import { scoreUnscoredOffers } from "@/lib/intelligence/score-sync";
 import { materializePublishablePosts } from "@/lib/distribution/materialize";
 import { processNextDelivery } from "@/lib/distribution/process";
@@ -14,6 +15,7 @@ type MoneyCycleInput = {
   materializeLimit?: number;
   deliveryLimit?: number;
   conversionDays?: number;
+  learningDays?: number;
   syncConversions?: boolean;
   niche?: string;
 };
@@ -34,6 +36,7 @@ export type MoneyCycleStep<T> = StepOk<T> | StepError;
 
 async function runStep<T>(fn: () => Promise<T>): Promise<MoneyCycleStep<T>> {
   const started = Date.now();
+
   try {
     const data = await fn();
     return {
@@ -81,9 +84,22 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
     50
   );
   const scoreLimit = Math.min(Math.max(input.scoreLimit ?? 100, 1), 500);
-  const materializeLimit = Math.min(Math.max(input.materializeLimit ?? 10, 1), 100);
-  const deliveryLimit = Math.min(Math.max(input.deliveryLimit ?? 25, 0), 100);
-  const conversionDays = Math.min(Math.max(input.conversionDays ?? 7, 1), 90);
+  const materializeLimit = Math.min(
+    Math.max(input.materializeLimit ?? 10, 1),
+    100
+  );
+  const deliveryLimit = Math.min(
+    Math.max(input.deliveryLimit ?? 25, 0),
+    100
+  );
+  const conversionDays = Math.min(
+    Math.max(input.conversionDays ?? 7, 1),
+    90
+  );
+  const learningDays = Math.min(
+    Math.max(input.learningDays ?? 90, 7),
+    365
+  );
   const niche = input.niche?.trim() || "general";
   const keyword = input.keyword?.trim() || null;
 
@@ -103,17 +119,6 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
       )
     : await runStep(() => runHunter({ strategyLimit: hunterStrategyLimit }));
 
-  const scoring = await runStep(() => scoreUnscoredOffers(scoreLimit));
-
-  const materialization = await runStep(() =>
-    materializePublishablePosts({
-      limit: materializeLimit,
-      niche
-    })
-  );
-
-  const distribution = await runStep(() => processDeliveries(deliveryLimit));
-
   const conversions =
     input.syncConversions === false
       ? ({
@@ -123,7 +128,8 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
         } as const)
       : await runStep(() => {
           const purchaseTimeEnd = Math.floor(Date.now() / 1000);
-          const purchaseTimeStart = purchaseTimeEnd - conversionDays * 86_400;
+          const purchaseTimeStart =
+            purchaseTimeEnd - conversionDays * 86_400;
 
           return syncShopeeConversions(
             {
@@ -135,6 +141,23 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
             20
           );
         });
+
+  const learning = await runStep(() =>
+    refreshLearningMetrics(learningDays)
+  );
+
+  const scoring = await runStep(() => scoreUnscoredOffers(scoreLimit));
+
+  const materialization = await runStep(() =>
+    materializePublishablePosts({
+      limit: materializeLimit,
+      niche
+    })
+  );
+
+  const distribution = await runStep(() =>
+    processDeliveries(deliveryLimit)
+  );
 
   const analytics = await runStep(() => getMoneyAnalytics(30));
 
@@ -151,15 +174,17 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
       materializeLimit,
       deliveryLimit,
       conversionDays,
+      learningDays,
       syncConversions: input.syncConversions !== false,
       niche
     },
     steps: {
       offers,
+      conversions,
+      learning,
       scoring,
       materialization,
       distribution,
-      conversions,
       analytics
     }
   };

@@ -1,4 +1,4 @@
-export const SCORE_ALGORITHM_VERSION = "money-score-v1.0.0";
+export const SCORE_ALGORITHM_VERSION = "money-score-v1.1.0";
 
 export type OpportunitySignals = {
   commissionRate?: number | null;
@@ -10,6 +10,7 @@ export type OpportunitySignals = {
   historicalCtr?: number | null;
   historicalCvr?: number | null;
   revenuePerClick?: number | null;
+  historicalSampleConfidence?: number | null;
   daysSinceFirstSeen?: number | null;
   recentPublicationCount?: number | null;
 };
@@ -32,6 +33,7 @@ export type ScoreFactor = {
   raw: number | null;
   normalized: number | null;
   weight: number;
+  evidenceConfidence: number;
   contribution: number;
   explanation: string;
 };
@@ -58,15 +60,15 @@ export type ScoreOptions = {
 };
 
 const WEIGHTS: Record<Exclude<ScoreFactorName, "saturation_penalty">, number> = {
-  commission_yield: 0.24,
-  discount_strength: 0.18,
-  demand: 0.16,
-  social_proof: 0.10,
-  impulse_price: 0.10,
+  commission_yield: 0.22,
+  discount_strength: 0.17,
+  demand: 0.14,
+  social_proof: 0.09,
+  impulse_price: 0.09,
   freshness: 0.06,
-  historical_ctr: 0.06,
-  historical_cvr: 0.06,
-  revenue_per_click: 0.04
+  historical_ctr: 0,
+  historical_cvr: 0.11,
+  revenue_per_click: 0.12
 };
 
 const SATURATION_MAX_PENALTY = 15;
@@ -91,7 +93,8 @@ function factor(
   name: Exclude<ScoreFactorName, "saturation_penalty">,
   raw: number | null,
   normalized: number | null,
-  explanation: string
+  explanation: string,
+  evidenceConfidence = 1
 ): ScoreFactor {
   return {
     name,
@@ -99,6 +102,7 @@ function factor(
     raw,
     normalized,
     weight: WEIGHTS[name],
+    evidenceConfidence: clamp(evidenceConfidence),
     contribution: 0,
     explanation
   };
@@ -126,6 +130,9 @@ export function scoreOpportunity(
   const cvr = finite(signals.historicalCvr);
   const rpc = finite(signals.revenuePerClick);
   const days = finite(signals.daysSinceFirstSeen);
+  const historicalConfidence = clamp(
+    finite(signals.historicalSampleConfidence) ?? 0
+  );
 
   const factors: ScoreFactor[] = [
     factor(
@@ -172,39 +179,68 @@ export function scoreOpportunity(
       "historical_ctr",
       ctr,
       ctr === null ? null : clamp(ratio(ctr) / 0.10),
-      ctr === null ? "CTR histórico ainda indisponível." : `CTR histórico de ${(ratio(ctr) * 100).toFixed(2)}%.`
+      ctr === null
+        ? "CTR real indisponível sem dado de impressão/leitura."
+        : `CTR histórico de ${(ratio(ctr) * 100).toFixed(2)}%.`,
+      historicalConfidence
     ),
     factor(
       "historical_cvr",
       cvr,
       cvr === null ? null : clamp(ratio(cvr) / 0.05),
-      cvr === null ? "CVR histórico ainda indisponível." : `CVR histórico de ${(ratio(cvr) * 100).toFixed(2)}%.`
+      cvr === null
+        ? "CVR histórico ainda indisponível."
+        : `CVR histórico suavizado de ${(ratio(cvr) * 100).toFixed(2)}% com ${(
+            historicalConfidence * 100
+          ).toFixed(0)}% de confiança de amostra.`,
+      historicalConfidence
     ),
     factor(
       "revenue_per_click",
       rpc,
       rpc === null ? null : clamp(rpc / 1),
-      rpc === null ? "Receita por clique ainda indisponível." : `Receita por clique de R$ ${rpc.toFixed(3)}.`
+      rpc === null
+        ? "Receita por clique ainda indisponível."
+        : `RPC histórico suavizado de R$ ${rpc.toFixed(3)} com ${(
+            historicalConfidence * 100
+          ).toFixed(0)}% de confiança de amostra.`,
+      historicalConfidence
     )
   ];
 
   const available = factors.filter(
-    (item) => item.available && item.normalized !== null
+    (item) =>
+      item.available &&
+      item.normalized !== null &&
+      item.weight > 0 &&
+      item.evidenceConfidence > 0
   );
-  const availableWeight = available.reduce((sum, item) => sum + item.weight, 0);
-  const totalWeight = Object.values(WEIGHTS).reduce((sum, value) => sum + value, 0);
+  const availableWeight = available.reduce(
+    (sum, item) => sum + item.weight * item.evidenceConfidence,
+    0
+  );
+  const totalWeight = Object.values(WEIGHTS).reduce(
+    (sum, value) => sum + value,
+    0
+  );
 
   let positiveScore = 0;
   if (availableWeight > 0) {
     for (const item of available) {
-      item.contribution = ((item.normalized ?? 0) * item.weight / availableWeight) * 100;
+      const effectiveWeight = item.weight * item.evidenceConfidence;
+      item.contribution =
+        ((item.normalized ?? 0) * effectiveWeight / availableWeight) * 100;
       positiveScore += item.contribution;
     }
   }
 
-  const recentPublications = Math.max(0, Math.trunc(finite(signals.recentPublicationCount) ?? 0));
+  const recentPublications = Math.max(
+    0,
+    Math.trunc(finite(signals.recentPublicationCount) ?? 0)
+  );
   const saturationNormalized = clamp(recentPublications / 5);
-  const saturationContribution = -(saturationNormalized * SATURATION_MAX_PENALTY);
+  const saturationContribution =
+    -(saturationNormalized * SATURATION_MAX_PENALTY);
 
   factors.push({
     name: "saturation_penalty",
@@ -212,6 +248,7 @@ export function scoreOpportunity(
     raw: recentPublications,
     normalized: saturationNormalized,
     weight: SATURATION_MAX_PENALTY / 100,
+    evidenceConfidence: 1,
     contribution: saturationContribution,
     explanation:
       recentPublications === 0
@@ -219,8 +256,10 @@ export function scoreOpportunity(
         : `${recentPublications} publicação(ões) recentes reduziram a prioridade.`
   });
 
-  const score = clamp((positiveScore + saturationContribution) / 100) * 100;
-  const confidence = totalWeight === 0 ? 0 : clamp(availableWeight / totalWeight);
+  const score =
+    clamp((positiveScore + saturationContribution) / 100) * 100;
+  const confidence =
+    totalWeight === 0 ? 0 : clamp(availableWeight / totalWeight);
 
   const thresholds = {
     review: options.reviewThreshold ?? 70,

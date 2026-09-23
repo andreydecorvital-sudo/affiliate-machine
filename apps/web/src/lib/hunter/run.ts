@@ -3,7 +3,7 @@ import { syncShopeeOffers } from "@/lib/shopee/sync";
 import { recordOperationalEvent } from "@/lib/events";
 
 type HunterStrategy = {
-  id: string;
+  strategy_id: string;
   provider: string;
   name: string;
   niche: string;
@@ -15,26 +15,25 @@ type HunterStrategy = {
   page_size: number;
   priority: number;
   enabled: boolean;
+  clicks: number | string;
+  conversions: number | string;
+  commission: number | string;
+  sample_confidence: number | string;
+  performance_index: number | string | null;
+  effective_rank: number | string;
 };
 
 export async function runHunter(input: { strategyLimit?: number } = {}) {
   const supabase = createSupabaseAdminClient();
   const strategyLimit = Math.min(Math.max(input.strategyLimit ?? 10, 1), 50);
 
-  const { data, error } = await supabase
-    .from("hunter_strategies")
-    .select(
-      "id,provider,name,niche,keyword,product_cat_id,list_type,sort_type,pages_per_run,page_size,priority,enabled"
-    )
-    .eq("enabled", true)
-    .eq("provider", "shopee")
-    .order("priority", { ascending: true })
-    .order("created_at", { ascending: true })
-    .limit(strategyLimit);
-
+  const { data, error } = await supabase.rpc("learning_strategy_rank");
   if (error) throw error;
 
-  const strategies = (data ?? []) as HunterStrategy[];
+  const strategies = ((data ?? []) as HunterStrategy[])
+    .filter((item) => item.enabled && item.provider === "shopee")
+    .slice(0, strategyLimit);
+
   const results: Array<{
     strategyId: string;
     name: string;
@@ -44,6 +43,9 @@ export async function runHunter(input: { strategyLimit?: number } = {}) {
     offersFetched: number;
     offersPersisted: number;
     uniqueItems: number;
+    effectiveRank: number;
+    performanceIndex: number | null;
+    sampleConfidence: number;
     error: string | null;
   }> = [];
 
@@ -54,7 +56,7 @@ export async function runHunter(input: { strategyLimit?: number } = {}) {
     const { data: run, error: runError } = await supabase
       .from("hunter_runs")
       .insert({
-        strategy_id: strategy.id,
+        strategy_id: strategy.strategy_id,
         started_at: startedAt,
         status: "running"
       })
@@ -82,7 +84,7 @@ export async function runHunter(input: { strategyLimit?: number } = {}) {
           },
           {
             niche: strategy.niche,
-            strategyId: strategy.id,
+            strategyId: strategy.strategy_id,
             strategyName: strategy.name
           }
         );
@@ -134,12 +136,12 @@ export async function runHunter(input: { strategyLimit?: number } = {}) {
         last_error: failure,
         updated_at: finishedAt
       })
-      .eq("id", strategy.id);
+      .eq("id", strategy.strategy_id);
 
     if (strategyUpdateError) throw strategyUpdateError;
 
     results.push({
-      strategyId: strategy.id,
+      strategyId: strategy.strategy_id,
       name: strategy.name,
       niche: strategy.niche,
       status,
@@ -147,6 +149,12 @@ export async function runHunter(input: { strategyLimit?: number } = {}) {
       offersFetched,
       offersPersisted,
       uniqueItems: strategyItems.size,
+      effectiveRank: Number(strategy.effective_rank) || strategy.priority,
+      performanceIndex:
+        strategy.performance_index === null
+          ? null
+          : Number(strategy.performance_index),
+      sampleConfidence: Number(strategy.sample_confidence) || 0,
       error: failure
     });
   }
@@ -158,14 +166,26 @@ export async function runHunter(input: { strategyLimit?: number } = {}) {
     failed: results.filter((item) => item.status === "error").length,
     pagesFetched: results.reduce((sum, item) => sum + item.pagesFetched, 0),
     offersFetched: results.reduce((sum, item) => sum + item.offersFetched, 0),
-    offersPersisted: results.reduce((sum, item) => sum + item.offersPersisted, 0),
+    offersPersisted: results.reduce(
+      (sum, item) => sum + item.offersPersisted,
+      0
+    ),
     uniqueItems: allUniqueItems.size
   };
 
   await recordOperationalEvent({
     eventType: "hunter.run.completed",
     source: "hunter",
-    payload: summary
+    payload: {
+      ...summary,
+      strategyOrder: results.map((item) => ({
+        strategyId: item.strategyId,
+        name: item.name,
+        effectiveRank: item.effectiveRank,
+        performanceIndex: item.performanceIndex,
+        sampleConfidence: item.sampleConfidence
+      }))
+    }
   }).catch(() => undefined);
 
   return { summary, results };

@@ -19,6 +19,9 @@ type Candidate = {
   first_seen_at: string;
   captured_at: string;
   recent_publication_count: number | string | null;
+  historical_cvr: number | string | null;
+  revenue_per_click: number | string | null;
+  learning_confidence: number | string | null;
 };
 
 function toNumber(value: number | string | null): number | null {
@@ -56,9 +59,13 @@ export async function scoreUnscoredOffers(limit = 100) {
     score: number;
     confidence: number;
     decision: OpportunityDecision;
+    learningConfidence: number;
   }> = [];
 
   for (const candidate of candidates) {
+    const learningConfidence =
+      toNumber(candidate.learning_confidence) ?? 0;
+
     const result = scoreOpportunity({
       commissionRate: toNumber(candidate.commission_rate),
       discountRate: toNumber(candidate.discount_rate),
@@ -66,7 +73,13 @@ export async function scoreUnscoredOffers(limit = 100) {
       rating: toNumber(candidate.rating),
       price: toNumber(candidate.price),
       priceMin: toNumber(candidate.price_min),
-      daysSinceFirstSeen: daysBetween(candidate.first_seen_at, candidate.captured_at),
+      historicalCvr: toNumber(candidate.historical_cvr),
+      revenuePerClick: toNumber(candidate.revenue_per_click),
+      historicalSampleConfidence: learningConfidence,
+      daysSinceFirstSeen: daysBetween(
+        candidate.first_seen_at,
+        candidate.captured_at
+      ),
       recentPublicationCount:
         toNumber(candidate.recent_publication_count) ?? 0
     });
@@ -92,7 +105,8 @@ export async function scoreUnscoredOffers(limit = 100) {
       externalItemId: candidate.external_item_id,
       score: result.score,
       confidence: result.confidence,
-      decision: result.decision
+      decision: result.decision,
+      learningConfidence
     });
 
     await recordOperationalEvent({
@@ -109,7 +123,12 @@ export async function scoreUnscoredOffers(limit = 100) {
         score: result.score,
         confidence: result.confidence,
         decision: result.decision,
-        algorithmVersion: result.algorithmVersion
+        algorithmVersion: result.algorithmVersion,
+        learning: {
+          cvr: toNumber(candidate.historical_cvr),
+          rpc: toNumber(candidate.revenue_per_click),
+          sampleConfidence: learningConfidence
+        }
       }
     });
   }
