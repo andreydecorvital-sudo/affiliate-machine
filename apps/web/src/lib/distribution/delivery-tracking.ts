@@ -4,6 +4,7 @@ import {
 } from "@affiliate/distribution";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createTrackedShopeeLink } from "@/lib/shopee/sync";
+import { applyActiveMessageExperiment } from "@/lib/experiments/assignment";
 import { recordOperationalEvent } from "@/lib/events";
 
 type DeliveryTrackingContext = {
@@ -37,9 +38,14 @@ export async function prepareDeliveryTracking(input: {
 
   if (error) throw error;
 
-  const context = (Array.isArray(data) ? data[0] : null) as DeliveryTrackingContext | null;
+  const context = (Array.isArray(data) ? data[0] : null) as
+    | DeliveryTrackingContext
+    | null;
+
   if (!context) {
-    throw new Error(`Delivery tracking context not found: ${input.deliveryId}`);
+    throw new Error(
+      `Delivery tracking context not found: ${input.deliveryId}`
+    );
   }
 
   if (
@@ -53,6 +59,7 @@ export async function prepareDeliveryTracking(input: {
       shortLinkId: context.short_link_id,
       trackingKey: context.tracking_key,
       content: context.content_override,
+      experiment: null,
       reused: true
     };
   }
@@ -76,18 +83,33 @@ export async function prepareDeliveryTracking(input: {
   });
 
   if (!link.shortLink.url) {
-    throw new Error("NEXT_PUBLIC_APP_URL is required for delivery tracking.");
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL is required for delivery tracking."
+    );
   }
 
-  const content = replaceOfferTrackingUrl(input.baseContent, link.shortLink.url);
+  const trackedContent = replaceOfferTrackingUrl(
+    input.baseContent,
+    link.shortLink.url
+  );
 
-  const { error: attachError } = await supabase.rpc("attach_delivery_tracking", {
-    p_delivery_id: context.delivery_id,
-    p_affiliate_link_id: link.affiliateLinkId,
-    p_short_link_id: link.shortLink.id,
-    p_tracking_key: trackingKey,
-    p_content: content
+  const experimentResult = await applyActiveMessageExperiment({
+    deliveryId: context.delivery_id,
+    content: trackedContent
   });
+
+  const content = experimentResult.content;
+
+  const { error: attachError } = await supabase.rpc(
+    "attach_delivery_tracking",
+    {
+      p_delivery_id: context.delivery_id,
+      p_affiliate_link_id: link.affiliateLinkId,
+      p_short_link_id: link.shortLink.id,
+      p_tracking_key: trackingKey,
+      p_content: content
+    }
+  );
 
   if (attachError) throw attachError;
 
@@ -103,7 +125,8 @@ export async function prepareDeliveryTracking(input: {
       trackingKey,
       groupTag,
       postTag,
-      shortCode: link.shortLink.code
+      shortCode: link.shortLink.code,
+      experiment: experimentResult.experiment
     }
   });
 
@@ -112,6 +135,7 @@ export async function prepareDeliveryTracking(input: {
     shortLinkId: link.shortLink.id,
     trackingKey,
     content,
+    experiment: experimentResult.experiment,
     reused: false
   };
 }

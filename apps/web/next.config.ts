@@ -7,7 +7,8 @@ const nextConfig: NextConfig = {
     "@affiliate/intelligence",
     "@affiliate/attribution",
     "@affiliate/distribution",
-    "@affiliate/acquisition"
+    "@affiliate/acquisition",
+    "@affiliate/experiments"
   ],
   poweredByHeader: false
 };

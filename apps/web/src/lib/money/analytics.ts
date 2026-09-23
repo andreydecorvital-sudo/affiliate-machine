@@ -1,20 +1,27 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getPaidTrafficEconomics } from "@/lib/acquisition/paid-traffic";
 
 export async function getMoneyAnalytics(days = 30) {
   const safeDays = Math.min(Math.max(Math.trunc(days), 1), 365);
   const supabase = createSupabaseAdminClient();
 
-  const [summaryResult, groupResult, conversionCount, attributedCount] =
-    await Promise.all([
-      supabase.rpc("money_summary", { p_days: safeDays }),
-      supabase.rpc("money_group_performance", { p_days: safeDays }),
-      supabase
-        .from("conversions")
-        .select("id", { count: "exact", head: true }),
-      supabase
-        .from("conversion_attributions")
-        .select("id", { count: "exact", head: true })
-    ]);
+  const [
+    summaryResult,
+    groupResult,
+    conversionCount,
+    attributedCount,
+    paidTraffic
+  ] = await Promise.all([
+    supabase.rpc("money_summary", { p_days: safeDays }),
+    supabase.rpc("money_group_performance", { p_days: safeDays }),
+    supabase
+      .from("conversions")
+      .select("id", { count: "exact", head: true }),
+    supabase
+      .from("conversion_attributions")
+      .select("id", { count: "exact", head: true }),
+    getPaidTrafficEconomics(safeDays)
+  ]);
 
   const error =
     summaryResult.error ||
@@ -35,6 +42,7 @@ export async function getMoneyAnalytics(days = 30) {
     periodDays: safeDays,
     summary,
     groups: groupResult.data ?? [],
+    paidTraffic,
     attribution: {
       totalConversions,
       attributedConversions,
