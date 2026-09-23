@@ -64,3 +64,34 @@ test("does not invent missing historical performance", () => {
   assert.equal(ctr?.available, false);
   assert.equal(ctr?.contribution, 0);
 });
+
+test("historical money signals gain influence only with sample confidence", () => {
+  const base = {
+    commissionRate: 0.10,
+    discountRate: 25,
+    sales: 5000,
+    rating: 4.5,
+    priceMin: 150,
+    historicalCvr: 0.05,
+    revenuePerClick: 1
+  };
+
+  const low = scoreOpportunity({
+    ...base,
+    historicalSampleConfidence: 0.1
+  });
+  const high = scoreOpportunity({
+    ...base,
+    historicalSampleConfidence: 1
+  });
+
+  const lowRpc = low.factors.find(
+    (factor) => factor.name === "revenue_per_click"
+  );
+  const highRpc = high.factors.find(
+    (factor) => factor.name === "revenue_per_click"
+  );
+
+  assert.ok((highRpc?.contribution ?? 0) > (lowRpc?.contribution ?? 0));
+  assert.ok(high.confidence > low.confidence);
+});
