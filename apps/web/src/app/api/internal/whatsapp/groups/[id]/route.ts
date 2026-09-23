@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 const schema = z.object({
   niche: z.string().trim().min(1).max(80).default("general"),
   active: z.boolean(),
-  acceptingTraffic: z.boolean().default(false)
+  acceptingTraffic: z.boolean().default(false),
+  inviteUrl: z.string().url().nullable().optional(),
+  capacityLimit: z.number().int().positive().max(100000).nullable().optional()
 });
 
 export async function PATCH(
