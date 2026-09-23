@@ -1,0 +1,171 @@
+import { syncShopeeOffers, syncShopeeConversions } from "@/lib/shopee/sync";
+import { scoreUnscoredOffers } from "@/lib/intelligence/score-sync";
+import { materializePublishablePosts } from "@/lib/distribution/materialize";
+import { processNextDelivery } from "@/lib/distribution/process";
+import { getMoneyAnalytics } from "@/lib/money/analytics";
+import { recordOperationalEvent } from "@/lib/events";
+
+type MoneyCycleInput = {
+  keyword?: string;
+  offerLimit?: number;
+  scoreLimit?: number;
+  materializeLimit?: number;
+  deliveryLimit?: number;
+  conversionDays?: number;
+  syncConversions?: boolean;
+  niche?: string;
+};
+
+type StepOk<T> = {
+  status: "ok";
+  durationMs: number;
+  data: T;
+};
+
+type StepError = {
+  status: "error";
+  durationMs: number;
+  error: string;
+};
+
+export type MoneyCycleStep<T> = StepOk<T> | StepError;
+
+async function runStep<T>(fn: () => Promise<T>): Promise<MoneyCycleStep<T>> {
+  const started = Date.now();
+  try {
+    return {
+      status: "ok",
+      durationMs: Date.now() - started,
+      data: await fn()
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      durationMs: Date.now() - started,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+async function processDeliveries(limit: number) {
+  const results: Awaited<ReturnType<typeof processNextDelivery>>[] = [];
+
+  for (let index = 0; index < limit; index += 1) {
+    const result = await processNextDelivery();
+    results.push(result);
+
+    if (
+      result.status === "gate_disabled" ||
+      result.status === "idle" ||
+      result.status === "failed"
+    ) {
+      break;
+    }
+  }
+
+  return {
+    attempted: results.length,
+    sent: results.filter((result) => result.sent).length,
+    results
+  };
+}
+
+export async function runMoneyCycle(input: MoneyCycleInput = {}) {
+  const startedAt = new Date();
+  const offerLimit = Math.min(Math.max(input.offerLimit ?? 50, 1), 100);
+  const scoreLimit = Math.min(Math.max(input.scoreLimit ?? 100, 1), 500);
+  const materializeLimit = Math.min(Math.max(input.materializeLimit ?? 10, 1), 100);
+  const deliveryLimit = Math.min(Math.max(input.deliveryLimit ?? 25, 0), 100);
+  const conversionDays = Math.min(Math.max(input.conversionDays ?? 7, 1), 90);
+  const niche = input.niche?.trim() || "general";
+
+  const offers = await runStep(() =>
+    syncShopeeOffers({
+      keyword: input.keyword?.trim() || undefined,
+      page: 1,
+      limit: offerLimit
+    })
+  );
+
+  const scoring = await runStep(() => scoreUnscoredOffers(scoreLimit));
+
+  const materialization = await runStep(() =>
+    materializePublishablePosts({
+      limit: materializeLimit,
+      niche
+    })
+  );
+
+  const distribution = await runStep(() =>
+    processDeliveries(deliveryLimit)
+  );
+
+  const conversions =
+    input.syncConversions === false
+      ? ({
+          status: "ok",
+          durationMs: 0,
+          data: { skipped: true }
+        } as const)
+      : await runStep(() => {
+          const purchaseTimeEnd = Math.floor(Date.now() / 1000);
+          const purchaseTimeStart = purchaseTimeEnd - conversionDays * 86_400;
+
+          return syncShopeeConversions(
+            {
+              purchaseTimeStart,
+              purchaseTimeEnd,
+              orderStatus: "ALL",
+              limit: 50
+            },
+            20
+          );
+        });
+
+  const analytics = await runStep(() => getMoneyAnalytics(30));
+
+  const finishedAt = new Date();
+  const result = {
+    startedAt: startedAt.toISOString(),
+    finishedAt: finishedAt.toISOString(),
+    durationMs: finishedAt.getTime() - startedAt.getTime(),
+    input: {
+      keyword: input.keyword?.trim() || null,
+      offerLimit,
+      scoreLimit,
+      materializeLimit,
+      deliveryLimit,
+      conversionDays,
+      syncConversions: input.syncConversions !== false,
+      niche
+    },
+    steps: {
+      offers,
+      scoring,
+      materialization,
+      distribution,
+      conversions,
+      analytics
+    }
+  };
+
+  await recordOperationalEvent({
+    eventType: "money.cycle.completed",
+    source: "money-cycle",
+    payload: {
+      durationMs: result.durationMs,
+      steps: Object.fromEntries(
+        Object.entries(result.steps).map(([name, step]) => [
+          name,
+          {
+            status: step.status,
+            durationMs: step.durationMs,
+            ...("error" in step ? { error: step.error } : {})
+          }
+        ])
+      )
+    }
+  }).catch(() => undefined);
+
+  return result;
+}
