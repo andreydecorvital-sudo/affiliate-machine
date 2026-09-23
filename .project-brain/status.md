@@ -2,14 +2,15 @@
 
 ## Current phase
 
-`MONEY ENGINE — CODE LOOP READY / LIVE VALIDATION PENDING`
+`MONEY ENGINE — BACKEND LOOP READY / LIVE VALIDATION PENDING`
 
 ## Strategic priority
 
 `MONEY ENGINE FIRST`
 
-O backend do ciclo econômico está construído. Visual relevante continua adiado até validação real de:
-`offer → score → tracked delivery → click → conversion → commission → EPC/CAC`.
+O backend econômico já cobre descoberta, score, distribuição, aquisição, atribuição e analytics.
+Visual relevante continua adiado até validação real de:
+`hunter → offer → score → tracked delivery → click → conversion → commission → EPC/CAC`.
 
 ## Capability status
 
@@ -25,9 +26,14 @@ O backend do ciclo econômico está construído. Visual relevante continua adiad
 
 ### Money Engine
 - Shopee Affiliate provider: CODE_READY / CREDENTIALS_PENDING
+- Hunter strategies: CODE_READY / LIVE_API_PENDING
+- Hunter run memory: CODE_READY / LIVE_DB_PENDING
+- Discovery niche/origin memory: CODE_READY / LIVE_DB_PENDING
 - Offer snapshots: CODE_READY / LIVE_DB_PENDING
 - Affiliate link + Shopee subIds: CODE_READY / LIVE_API_PENDING
 - Score engine: CODE_READY / LIVE_DATA_PENDING
+- Recent publication penalty: CODE_READY / LIVE_DATA_PENDING
+- 7-day product cooldown: CODE_READY / LIVE_DATA_PENDING
 - Opportunity decisions: CODE_READY / LIVE_DATA_PENDING
 - Shortlinks/click tracking: CODE_READY / LIVE_DB_PENDING
 - WhatsApp multi-account bridge: CODE_READY / PAIRING_PENDING
@@ -42,15 +48,15 @@ O backend do ciclo econômico está construído. Visual relevante continua adiad
 - Commission ledger: CODE_READY / LIVE_DB_PENDING
 - Conservative conversion attribution: CODE_READY / LIVE_CONVERSION_PENDING
 - EPC/group money analytics: CODE_READY / LIVE_DATA_PENDING
+- Money Cycle orchestrator: CODE_READY / LIVE_RUN_PENDING
 
 ### Next blocker
-- Money Cycle orchestration: BUILDING
 - Dedicated Supabase project + migrations: PENDING_USER_INFRA_PHASE
 - Vercel project/envs: PENDING_USER_INFRA_PHASE
-- Shopee credentials: PENDING
+- Shopee affiliate credentials: PENDING
 - Gemini API key: PENDING
 - WhatsApp pairing + explicit group activation: PENDING
-- one controlled canary end-to-end: PENDING
+- one controlled end-to-end canary: PENDING
 
 ### Later
 - Meta Ads read analytics / CAC: PLANNED
@@ -70,6 +76,8 @@ O backend do ciclo econômico está construído. Visual relevante continua adiad
 - PR #5 — Distribution + WhatsApp
 - PR #6 — Acquisition Group Router
 - PR #7 — Money Analytics
+- PR #8 — Money Cycle Orchestrator
+- PR #9 — Hunter Strategies / Origin Memory / Cooldown
 
 ## Evidence
 
@@ -79,10 +87,13 @@ O backend do ciclo econômico está construído. Visual relevante continua adiad
 - Distribution CI: typecheck ✅ tests ✅ build ✅
 - Acquisition CI: typecheck ✅ tests ✅ build ✅
 - Money Analytics CI: typecheck ✅ tests ✅ build ✅
+- Money Cycle CI: typecheck ✅ tests ✅ build ✅
+- Hunter Strategies CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
-Runtime/infrastructure target: Vercel + Supabase. Gemini is the approved primary AI provider, with deterministic degradation when unavailable.
+Runtime/infrastructure target: Vercel + Supabase.
+Gemini remains the approved primary AI provider, with deterministic degradation when unavailable.
 
 ## Rule
 
