@@ -18,6 +18,7 @@ type Candidate = {
   commission_rate: number | string | null;
   first_seen_at: string;
   captured_at: string;
+  recent_publication_count: number | string | null;
 };
 
 function toNumber(value: number | string | null): number | null {
@@ -66,7 +67,8 @@ export async function scoreUnscoredOffers(limit = 100) {
       price: toNumber(candidate.price),
       priceMin: toNumber(candidate.price_min),
       daysSinceFirstSeen: daysBetween(candidate.first_seen_at, candidate.captured_at),
-      recentPublicationCount: 0
+      recentPublicationCount:
+        toNumber(candidate.recent_publication_count) ?? 0
     });
 
     const { data: scoreId, error: persistError } = await supabase.rpc(

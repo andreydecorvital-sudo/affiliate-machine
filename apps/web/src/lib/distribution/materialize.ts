@@ -16,6 +16,7 @@ type Candidate = {
   rating: number | string | null;
   score: number | string;
   confidence: number | string;
+  discovery_niche: string | null;
 };
 
 function numberOrNull(value: number | string | null): number | null {
@@ -30,7 +31,7 @@ export async function materializePublishablePosts(input: {
 }) {
   const supabase = createSupabaseAdminClient();
   const limit = Math.min(Math.max(input.limit ?? 10, 1), 100);
-  const niche = input.niche?.trim() || "general";
+  const fallbackNiche = input.niche?.trim() || "general";
 
   const { data, error } = await supabase.rpc("get_publishable_opportunities", {
     p_limit: limit
@@ -42,16 +43,44 @@ export async function materializePublishablePosts(input: {
     postId: string;
     externalItemId: string;
     score: number;
+    niche: string;
     shortUrl: string;
   }> = [];
 
+  const skipped: Array<{
+    externalItemId: string;
+    niche: string;
+    reason: string;
+  }> = [];
+
   for (const candidate of candidates) {
+    const niche = candidate.discovery_niche?.trim() || fallbackNiche;
+
+    const { data: targetCount, error: targetError } = await supabase.rpc(
+      "distribution_target_count",
+      { p_niche: niche }
+    );
+    if (targetError) throw targetError;
+
+    if ((Number(targetCount) || 0) < 1) {
+      skipped.push({
+        externalItemId: candidate.external_item_id,
+        niche,
+        reason: "no_active_distribution_target"
+      });
+      continue;
+    }
+
     const trackingKey = `score:${candidate.offer_score_id}`;
     const link = await createTrackedShopeeLink({
       externalItemId: candidate.external_item_id,
       originUrl: candidate.offer_link,
       subIds: [niche, `score-${candidate.offer_score_id}`],
-      trackingKey
+      trackingKey,
+      context: {
+        offerScoreId: candidate.offer_score_id,
+        niche
+      }
     });
 
     if (!link.shortLink.url) {
@@ -105,9 +134,10 @@ export async function materializePublishablePosts(input: {
       postId,
       externalItemId: candidate.external_item_id,
       score: numberOrNull(candidate.score) ?? 0,
+      niche,
       shortUrl: link.shortLink.url
     });
   }
 
-  return { processed: candidates.length, created };
+  return { processed: candidates.length, created, skipped };
 }

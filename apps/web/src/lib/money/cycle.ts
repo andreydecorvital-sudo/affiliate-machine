@@ -1,4 +1,5 @@
 import { syncShopeeOffers, syncShopeeConversions } from "@/lib/shopee/sync";
+import { runHunter } from "@/lib/hunter/run";
 import { scoreUnscoredOffers } from "@/lib/intelligence/score-sync";
 import { materializePublishablePosts } from "@/lib/distribution/materialize";
 import { processNextDelivery } from "@/lib/distribution/process";
@@ -8,6 +9,7 @@ import { recordOperationalEvent } from "@/lib/events";
 type MoneyCycleInput = {
   keyword?: string;
   offerLimit?: number;
+  hunterStrategyLimit?: number;
   scoreLimit?: number;
   materializeLimit?: number;
   deliveryLimit?: number;
@@ -33,10 +35,11 @@ export type MoneyCycleStep<T> = StepOk<T> | StepError;
 async function runStep<T>(fn: () => Promise<T>): Promise<MoneyCycleStep<T>> {
   const started = Date.now();
   try {
+    const data = await fn();
     return {
       status: "ok",
       durationMs: Date.now() - started,
-      data: await fn()
+      data
     };
   } catch (error) {
     return {
@@ -73,19 +76,32 @@ async function processDeliveries(limit: number) {
 export async function runMoneyCycle(input: MoneyCycleInput = {}) {
   const startedAt = new Date();
   const offerLimit = Math.min(Math.max(input.offerLimit ?? 50, 1), 100);
+  const hunterStrategyLimit = Math.min(
+    Math.max(input.hunterStrategyLimit ?? 10, 1),
+    50
+  );
   const scoreLimit = Math.min(Math.max(input.scoreLimit ?? 100, 1), 500);
   const materializeLimit = Math.min(Math.max(input.materializeLimit ?? 10, 1), 100);
   const deliveryLimit = Math.min(Math.max(input.deliveryLimit ?? 25, 0), 100);
   const conversionDays = Math.min(Math.max(input.conversionDays ?? 7, 1), 90);
   const niche = input.niche?.trim() || "general";
+  const keyword = input.keyword?.trim() || null;
 
-  const offers = await runStep(() =>
-    syncShopeeOffers({
-      keyword: input.keyword?.trim() || undefined,
-      page: 1,
-      limit: offerLimit
-    })
-  );
+  const offers = keyword
+    ? await runStep(() =>
+        syncShopeeOffers(
+          {
+            keyword,
+            page: 1,
+            limit: offerLimit
+          },
+          {
+            niche,
+            strategyName: "manual-keyword"
+          }
+        )
+      )
+    : await runStep(() => runHunter({ strategyLimit: hunterStrategyLimit }));
 
   const scoring = await runStep(() => scoreUnscoredOffers(scoreLimit));
 
@@ -96,9 +112,7 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
     })
   );
 
-  const distribution = await runStep(() =>
-    processDeliveries(deliveryLimit)
-  );
+  const distribution = await runStep(() => processDeliveries(deliveryLimit));
 
   const conversions =
     input.syncConversions === false
@@ -130,8 +144,9 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
     finishedAt: finishedAt.toISOString(),
     durationMs: finishedAt.getTime() - startedAt.getTime(),
     input: {
-      keyword: input.keyword?.trim() || null,
+      keyword,
       offerLimit,
+      hunterStrategyLimit,
       scoreLimit,
       materializeLimit,
       deliveryLimit,
