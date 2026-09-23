@@ -1,1 +1,1 @@
-export * from "./shopee/index.ts";
+export * from "./shopee/index";
