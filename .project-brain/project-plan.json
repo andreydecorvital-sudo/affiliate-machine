@@ -1,0 +1,103 @@
+{
+  "project": {
+    "name": "Affiliate Machine",
+    "purpose": "Automated affiliate acquisition, WhatsApp distribution and attribution engine",
+    "status": "PLANNED"
+  },
+  "areas": [
+    {
+      "id": "platform",
+      "label": "Platform",
+      "features": [
+        {"id":"foundation","label":"Foundation","role":"config, auth, secrets, audit, health, feature gates","status":"PLANNED"},
+        {"id":"jobs","label":"Jobs","role":"durable jobs via pg-boss","status":"PLANNED"},
+        {"id":"events","label":"Universal Events","role":"append-only operational event timeline","status":"PLANNED"}
+      ]
+    },
+    {
+      "id": "affiliate-commerce",
+      "label": "Affiliate Commerce",
+      "features": [
+        {"id":"shopee","label":"Shopee Affiliate","role":"offers, links, conversions","status":"PLANNED"},
+        {"id":"tiktok","label":"TikTok Affiliate","role":"future provider","status":"FUTURE"},
+        {"id":"amazon","label":"Amazon Associates","role":"future provider","status":"FUTURE"}
+      ]
+    },
+    {
+      "id": "intelligence",
+      "label": "Intelligence",
+      "features": [
+        {"id":"snapshots","label":"Offer Snapshots","role":"historical price/commission/demand state","status":"PLANNED"},
+        {"id":"score","label":"Opportunity Score","role":"explainable opportunity prioritization","status":"PLANNED"},
+        {"id":"experiments","label":"Experiments","role":"measure timing/product/creative hypotheses","status":"PLANNED"}
+      ]
+    },
+    {
+      "id": "creative",
+      "label": "Creative",
+      "features": [
+        {"id":"copy","label":"Copy Engine","role":"message generation and variants","status":"PLANNED"},
+        {"id":"image","label":"Image Engine","role":"static creative generation with Sharp","status":"PLANNED"},
+        {"id":"video","label":"Video Engine","role":"future programmatic video","status":"FUTURE"}
+      ]
+    },
+    {
+      "id": "distribution",
+      "label": "Distribution",
+      "features": [
+        {"id":"whatsapp-sessions","label":"WhatsApp Sessions","role":"multi-session Baileys runtime","status":"PLANNED"},
+        {"id":"groups","label":"WhatsApp Groups","role":"group inventory, niches, capacity and health","status":"PLANNED"},
+        {"id":"posts","label":"Posts","role":"logical scheduled publications","status":"PLANNED"},
+        {"id":"deliveries","label":"Deliveries","role":"idempotent post x group execution","status":"PLANNED"}
+      ]
+    },
+    {
+      "id": "attribution",
+      "label": "Attribution",
+      "features": [
+        {"id":"shortlinks","label":"Shortlinks","role":"redirect and click tracking","status":"PLANNED"},
+        {"id":"conversions","label":"Conversions","role":"provider conversion sync","status":"PLANNED"},
+        {"id":"commission","label":"Commission Ledger","role":"pending/approved/rejected/paid commission truth","status":"PLANNED"}
+      ]
+    },
+    {
+      "id": "acquisition",
+      "label": "Acquisition",
+      "features": [
+        {"id":"landing","label":"Landing","role":"niche acquisition pages and UTM capture","status":"PLANNED"},
+        {"id":"group-router","label":"Group Router","role":"capacity-aware overflow redirect","status":"PLANNED"},
+        {"id":"meta-ads","label":"Meta Ads","role":"campaign spend and traffic analytics","status":"PLANNED"},
+        {"id":"cohorts","label":"Cohorts","role":"CAC/LTV acquisition cohorts","status":"PLANNED"}
+      ]
+    },
+    {
+      "id": "surfaces",
+      "label": "Surfaces",
+      "features": [
+        {"id":"frontend-zero","label":"Operational Frontend","role":"daily operator experience","status":"PLANNED"},
+        {"id":"platform-admin","label":"Platform Admin","role":"system health and control plane","status":"PLANNED"},
+        {"id":"public","label":"Public Acquisition","role":"landing and group routing","status":"PLANNED"}
+      ]
+    }
+  ],
+  "relations": [
+    {"from":"affiliate-commerce:shopee","to":"intelligence:snapshots","type":"feeds","label":"offers and commercial facts"},
+    {"from":"intelligence:snapshots","to":"intelligence:score","type":"scores","label":"historical opportunity context"},
+    {"from":"intelligence:score","to":"distribution:posts","type":"creates","label":"approved opportunities become posts"},
+    {"from":"creative:copy","to":"distribution:posts","type":"supplies","label":"message variant"},
+    {"from":"creative:image","to":"distribution:posts","type":"supplies","label":"visual creative"},
+    {"from":"distribution:posts","to":"distribution:deliveries","type":"fans_out","label":"one post to N group deliveries"},
+    {"from":"distribution:whatsapp-sessions","to":"distribution:deliveries","type":"executes","label":"send via connected session"},
+    {"from":"distribution:groups","to":"distribution:deliveries","type":"targets","label":"delivery destination"},
+    {"from":"distribution:posts","to":"attribution:shortlinks","type":"uses","label":"trackable outbound link"},
+    {"from":"attribution:shortlinks","to":"attribution:conversions","type":"correlates","label":"click to provider conversion"},
+    {"from":"affiliate-commerce:shopee","to":"attribution:conversions","type":"feeds","label":"conversion report"},
+    {"from":"attribution:conversions","to":"attribution:commission","type":"produces","label":"commission entries"},
+    {"from":"acquisition:meta-ads","to":"acquisition:landing","type":"feeds","label":"traffic"},
+    {"from":"acquisition:landing","to":"acquisition:group-router","type":"routes","label":"niche acquisition"},
+    {"from":"acquisition:group-router","to":"distribution:groups","type":"fills","label":"new members"},
+    {"from":"acquisition:cohorts","to":"attribution:commission","type":"measures","label":"LTV versus CAC"},
+    {"from":"surfaces:frontend-zero","to":"platform:jobs","type":"controls","label":"operator actions"},
+    {"from":"surfaces:platform-admin","to":"platform:foundation","type":"observes","label":"health and gates"}
+  ]
+}
