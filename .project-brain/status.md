@@ -65,6 +65,12 @@ Visual relevante continua adiado até validação real de:
 - Meta Ads daily campaign insights sync: CODE_READY / LIVE_API_PENDING
 - Meta campaign mapping to UTM campaignKey: CODE_READY / LIVE_MAPPING_PENDING
 - Meta campaign spend → paid economics: CODE_READY / LIVE_DATA_PENDING
+- Distribution timing learning: CODE_READY / LIVE_SAMPLE_PENDING
+- Group performance learning: CODE_READY / LIVE_SAMPLE_PENDING
+- Timing baseline/treatment experiments: CODE_READY / LIVE_SAMPLE_PENDING
+- Group-allocation baseline/treatment experiments: CODE_READY / LIVE_SAMPLE_PENDING
+- Learned delivery eligibility windows: CODE_READY / LIVE_SAMPLE_PENDING
+- Deterministic exploitation/exploration allocation: CODE_READY / LIVE_SAMPLE_PENDING
 
 ### Next blocker
 - Dedicated Supabase project + migrations: PENDING_USER_INFRA_PHASE
@@ -75,9 +81,9 @@ Visual relevante continua adiado até validação real de:
 - one controlled end-to-end canary: PENDING
 
 ### Next code opportunity
-- timing experiments: NEXT
-- group-allocation experiments: NEXT
 - acquisition creative attribution: NEXT
+- paid creative performance learning: NEXT
+- canary readiness report: NEXT
 
 ### Later
 - TikTok/Amazon affiliate providers: FUTURE
@@ -100,6 +106,7 @@ Visual relevante continua adiado até validação real de:
 - PR #10 — Learning Engine / Money Feedback Loop
 - PR #11 — Paid Economics / Experiment Engine
 - PR #12 — Meta Ads Read-only Ingestion
+- PR #13 — Timing + Group Allocation Experiments
 
 ## Evidence
 
@@ -114,6 +121,7 @@ Visual relevante continua adiado até validação real de:
 - Learning Engine CI: typecheck ✅ tests ✅ build ✅
 - Paid Economics / Experiment Engine CI: typecheck ✅ tests ✅ build ✅
 - Meta Ads Read-only CI: typecheck ✅ tests ✅ build ✅
+- Timing + Group Allocation CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
