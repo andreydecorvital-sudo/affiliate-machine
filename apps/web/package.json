@@ -12,6 +12,7 @@
   "dependencies": {
     "@affiliate/attribution": "workspace:*",
     "@affiliate/core": "workspace:*",
+    "@affiliate/distribution": "workspace:*",
     "@affiliate/intelligence": "workspace:*",
     "@affiliate/providers": "workspace:*",
     "@google/genai": "2.24.0",

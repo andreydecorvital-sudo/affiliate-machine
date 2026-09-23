@@ -13,6 +13,18 @@ export type ManagedShortLink = {
   url: string | null;
 };
 
+function toManagedShortLink(row: { id: string; code: string }): ManagedShortLink {
+  const path = `/go/${row.code}`;
+  const baseUrl = getServerEnv().NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? null;
+
+  return {
+    id: row.id,
+    code: row.code,
+    path,
+    url: baseUrl ? `${baseUrl}${path}` : null
+  };
+}
+
 export async function createManagedShortLink(input: {
   provider: string;
   affiliateLinkId: string;
@@ -22,6 +34,23 @@ export async function createManagedShortLink(input: {
   expiresAt?: string;
 }): Promise<ManagedShortLink> {
   const supabase = createSupabaseAdminClient();
+
+  if (input.trackingKey) {
+    const { data: existing, error: lookupError } = await supabase
+      .from("short_links")
+      .select("id,code")
+      .eq("provider", input.provider)
+      .eq("tracking_key", input.trackingKey)
+      .maybeSingle();
+
+    if (lookupError) throw lookupError;
+    if (existing?.id && existing?.code) {
+      return toManagedShortLink({
+        id: String(existing.id),
+        code: String(existing.code)
+      });
+    }
+  }
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = generateShortCode(8);
@@ -36,14 +65,24 @@ export async function createManagedShortLink(input: {
     });
 
     if (!error && typeof data === "string") {
-      const path = `/go/${code}`;
-      const baseUrl = getServerEnv().NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? null;
-      return {
-        id: data,
-        code,
-        path,
-        url: baseUrl ? `${baseUrl}${path}` : null
-      };
+      return toManagedShortLink({ id: data, code });
+    }
+
+    if (error?.code === "23505" && input.trackingKey) {
+      const { data: existing, error: lookupError } = await supabase
+        .from("short_links")
+        .select("id,code")
+        .eq("provider", input.provider)
+        .eq("tracking_key", input.trackingKey)
+        .maybeSingle();
+
+      if (lookupError) throw lookupError;
+      if (existing?.id && existing?.code) {
+        return toManagedShortLink({
+          id: String(existing.id),
+          code: String(existing.code)
+        });
+      }
     }
 
     if (error?.code !== "23505") {

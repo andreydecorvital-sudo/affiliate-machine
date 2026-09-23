@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
     "@affiliate/core",
     "@affiliate/providers",
     "@affiliate/intelligence",
-    "@affiliate/attribution"
+    "@affiliate/attribution",
+    "@affiliate/distribution"
   ],
   poweredByHeader: false
 };

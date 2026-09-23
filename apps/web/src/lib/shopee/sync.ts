@@ -9,6 +9,7 @@ import {
   persistShopeeOfferSnapshot
 } from "@/lib/shopee/repository";
 import { createManagedShortLink } from "@/lib/attribution/short-links";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { recordOperationalEvent } from "@/lib/events";
 
 export async function syncShopeeOffers(params: ProductOfferParams = {}) {
@@ -53,10 +54,44 @@ export async function createTrackedShopeeLink(input: {
   originUrl: string;
   subIds?: string[];
   trackingKey?: string;
+  context?: Record<string, unknown>;
 }) {
-  const client = createShopeeAffiliateClient();
   const effectiveSubIds = buildShopeeSubIds(input.subIds, input.trackingKey);
+  const supabase = createSupabaseAdminClient();
 
+  if (input.trackingKey) {
+    const { data: existing, error } = await supabase
+      .from("affiliate_links")
+      .select("id,affiliate_url")
+      .eq("provider", "shopee")
+      .eq("tracking_key", input.trackingKey)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (existing?.id && existing?.affiliate_url) {
+      const shortLink = await createManagedShortLink({
+        provider: "shopee",
+        affiliateLinkId: String(existing.id),
+        destinationUrl: String(existing.affiliate_url),
+        trackingKey: input.trackingKey,
+        context: {
+          externalItemId: input.externalItemId,
+          subIds: effectiveSubIds,
+          ...(input.context ?? {})
+        }
+      });
+
+      return {
+        affiliateLinkId: String(existing.id),
+        affiliateUrl: String(existing.affiliate_url),
+        subIds: effectiveSubIds,
+        shortLink
+      };
+    }
+  }
+
+  const client = createShopeeAffiliateClient();
   const affiliateUrl = await client.generateShortLink({
     originUrl: input.originUrl,
     subIds: effectiveSubIds
@@ -78,7 +113,8 @@ export async function createTrackedShopeeLink(input: {
     trackingKey: input.trackingKey,
     context: {
       externalItemId: input.externalItemId,
-      subIds: effectiveSubIds
+      subIds: effectiveSubIds,
+      ...(input.context ?? {})
     }
   });
 
@@ -87,11 +123,15 @@ export async function createTrackedShopeeLink(input: {
     source: "shopee-affiliate",
     entityType: "affiliate_link",
     entityId: affiliateLinkId,
+    idempotencyKey: input.trackingKey
+      ? `affiliate-link-created:${input.trackingKey}`
+      : undefined,
     payload: {
       externalItemId: input.externalItemId,
       trackingKey: input.trackingKey ?? null,
       subIds: effectiveSubIds,
-      shortCode: shortLink.code
+      shortCode: shortLink.code,
+      context: input.context ?? {}
     }
   });
 
