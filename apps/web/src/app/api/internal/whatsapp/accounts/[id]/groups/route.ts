@@ -18,7 +18,7 @@ export async function GET(
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("whatsapp_groups")
-    .select("id,group_jid,name,member_count,niche,active,accepting_traffic,last_synced_at")
+    .select("id,group_jid,name,member_count,niche,active,accepting_traffic,invite_url,capacity_limit,last_routed_at,last_synced_at")
     .eq("account_id", id)
     .order("name", { ascending: true });
 
