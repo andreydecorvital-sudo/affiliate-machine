@@ -4,6 +4,7 @@ import {
   buildDeterministicOfferMessage,
   createDeliveryIdempotencyKey,
   createTrackingTag,
+  replaceOfferTrackingUrl,
   retryDelaySeconds
 } from "../src/index.ts";
 
@@ -30,6 +31,14 @@ test("delivery idempotency key is stable", () => {
   assert.notEqual(
     createDeliveryIdempotencyKey("post-1", "group-1"),
     createDeliveryIdempotencyKey("post-1", "group-2")
+  );
+});
+
+test("replaces only the offer tracking URL", () => {
+  const original = "Produto\\n\\n👉 https://x.test/go/OLD123";
+  assert.equal(
+    replaceOfferTrackingUrl(original, "https://x.test/go/NEW456"),
+    "Produto\\n\\n👉 https://x.test/go/NEW456"
   );
 });
 
