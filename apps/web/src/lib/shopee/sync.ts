@@ -8,6 +8,7 @@ import {
   persistShopeeConversion,
   persistShopeeOfferSnapshot
 } from "@/lib/shopee/repository";
+import { createManagedShortLink } from "@/lib/attribution/short-links";
 import { recordOperationalEvent } from "@/lib/events";
 
 export async function syncShopeeOffers(params: ProductOfferParams = {}) {
@@ -36,6 +37,17 @@ export async function syncShopeeOffers(params: ProductOfferParams = {}) {
   return { ...page, persisted };
 }
 
+function buildShopeeSubIds(subIds: string[] | undefined, trackingKey: string | undefined) {
+  const values = (subIds ?? []).map((value) => value.trim()).filter(Boolean);
+  const unique = [...new Set(values)];
+
+  if (trackingKey?.trim() && !unique.includes(trackingKey.trim())) {
+    unique.push(trackingKey.trim());
+  }
+
+  return unique.slice(0, 5);
+}
+
 export async function createTrackedShopeeLink(input: {
   externalItemId: string;
   originUrl: string;
@@ -43,33 +55,52 @@ export async function createTrackedShopeeLink(input: {
   trackingKey?: string;
 }) {
   const client = createShopeeAffiliateClient();
+  const effectiveSubIds = buildShopeeSubIds(input.subIds, input.trackingKey);
+
   const affiliateUrl = await client.generateShortLink({
     originUrl: input.originUrl,
-    subIds: input.subIds
+    subIds: effectiveSubIds
   });
 
-  const linkId = await persistAffiliateLink({
+  const affiliateLinkId = await persistAffiliateLink({
     provider: "shopee",
     externalItemId: input.externalItemId,
     originUrl: input.originUrl,
     affiliateUrl,
-    subIds: input.subIds,
+    subIds: effectiveSubIds,
     trackingKey: input.trackingKey
+  });
+
+  const shortLink = await createManagedShortLink({
+    provider: "shopee",
+    affiliateLinkId,
+    destinationUrl: affiliateUrl,
+    trackingKey: input.trackingKey,
+    context: {
+      externalItemId: input.externalItemId,
+      subIds: effectiveSubIds
+    }
   });
 
   await recordOperationalEvent({
     eventType: "affiliate.link.created",
     source: "shopee-affiliate",
     entityType: "affiliate_link",
-    entityId: linkId,
+    entityId: affiliateLinkId,
     payload: {
       externalItemId: input.externalItemId,
       trackingKey: input.trackingKey ?? null,
-      subIds: input.subIds ?? []
+      subIds: effectiveSubIds,
+      shortCode: shortLink.code
     }
   });
 
-  return { linkId, affiliateUrl };
+  return {
+    affiliateLinkId,
+    affiliateUrl,
+    subIds: effectiveSubIds,
+    shortLink
+  };
 }
 
 export async function syncShopeeConversions(

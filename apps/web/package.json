@@ -10,6 +10,7 @@
     "test": "node --import tsx --test test/**/*.test.ts"
   },
   "dependencies": {
+    "@affiliate/attribution": "workspace:*",
     "@affiliate/core": "workspace:*",
     "@affiliate/intelligence": "workspace:*",
     "@affiliate/providers": "workspace:*",
