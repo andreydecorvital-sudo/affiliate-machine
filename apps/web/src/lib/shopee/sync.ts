@@ -159,6 +159,16 @@ export async function syncShopeeConversions(
     totalCommission += conversion.totalCommission;
   }
 
+  const supabase = createSupabaseAdminClient();
+  const { data: attributionData, error: attributionError } = await supabase.rpc(
+    "reconcile_conversion_attributions"
+  );
+  if (attributionError) throw attributionError;
+
+  const attribution = Array.isArray(attributionData)
+    ? attributionData[0] ?? { attributed: 0, unattributed: 0 }
+    : attributionData ?? { attributed: 0, unattributed: 0 };
+
   await recordOperationalEvent({
     eventType: "affiliate.shopee.conversions_synced",
     source: "shopee-affiliate",
@@ -166,6 +176,8 @@ export async function syncShopeeConversions(
       fetched: conversions.length,
       persisted,
       totalCommission,
+      attributed: attribution.attributed ?? 0,
+      unattributed: attribution.unattributed ?? 0,
       purchaseTimeStart: params.purchaseTimeStart,
       purchaseTimeEnd: params.purchaseTimeEnd
     }
@@ -174,6 +186,7 @@ export async function syncShopeeConversions(
   return {
     fetched: conversions.length,
     persisted,
-    totalCommission
+    totalCommission,
+    attribution
   };
 }
