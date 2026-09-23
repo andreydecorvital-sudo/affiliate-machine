@@ -1,101 +1,53 @@
-# Frontend — superfícies
+# Frontend — estratégia de execução
 
-## Linguagem
+## Status atual
 
-Inspirar-se nos princípios do Frontend Zero:
+**DEFERRED até o Money Engine estar funcional.**
+
+Não vamos gastar ciclos relevantes com polimento visual enquanto ainda não fechamos:
+
+```text
+oferta
+→ link afiliado
+→ distribuição
+→ clique
+→ venda
+→ comissão
+→ CAC/LTV
+```
+
+## O que pode existir antes
+
+Somente superfícies mínimas para operação e debug:
+
+- health;
+- lista simples de jobs;
+- ofertas aprovadas;
+- grupos;
+- posts/deliveries;
+- cliques;
+- conversões/comissões;
+- kill switches.
+
+Sem foco em design refinado, animações ou SaaS polish.
+
+## Depois do Money Engine
+
+Aí sim aplicar integralmente a linguagem do Frontend Zero:
+
 - leitura rápida;
 - hierarquia forte;
 - pouca poluição;
 - status operacionais claros;
-- ações relevantes próximas do contexto;
 - dados reais por padrão;
-- demo/visual mode separado quando necessário.
+- dashboard financeiro;
+- Hunter;
+- Conteúdo;
+- Grupos;
+- Publicações;
+- Analytics;
+- Configurações;
+- Platform Admin;
+- Project Brain visual.
 
-## SaaS / Operação
-
-### Dashboard
-Hoje, 7d, 30d:
-- comissão;
-- pedidos;
-- cliques;
-- conversão;
-- CAC;
-- LTV/CAC;
-- posts enviados;
-- grupos ativos;
-- health.
-
-### Hunter
-- oportunidades;
-- score + breakdown;
-- preço/desconto/comissão;
-- histórico;
-- provider;
-- aprovar/ignorar/forçar;
-- simular copy.
-
-### Conteúdo
-- templates;
-- variantes;
-- preview;
-- performance por criativo.
-
-### Grupos
-- conta;
-- JID/nome;
-- nicho;
-- membros/capacidade;
-- accepting traffic;
-- health;
-- último envio;
-- overflow route.
-
-### Publicações
-- fila;
-- schedule;
-- post lógico;
-- entregas por grupo;
-- retry/falhas;
-- kill switch.
-
-### Analytics
-- produto;
-- grupo;
-- nicho;
-- horário;
-- criativo;
-- campanha;
-- cohort;
-- commission/LTV.
-
-### Configurações
-- providers;
-- WhatsApp accounts;
-- score thresholds;
-- frequência;
-- tracking;
-- IA;
-- feature gates.
-
-## Platform Admin
-
-- visão global do runtime;
-- project brain;
-- jobs;
-- dead jobs;
-- providers;
-- WhatsApp sessions;
-- health/incidents;
-- logs auditáveis;
-- feature gates;
-- migrations/readiness;
-- storage/costs;
-- capacity.
-
-## Pública / aquisição
-
-- landing por nicho;
-- group router;
-- captura UTM;
-- disclosure/consent quando aplicável;
-- redirect para grupo selecionado.
+O visual existe para **operar melhor e escalar lucro**, não para antecipar produto antes da prova financeira.
