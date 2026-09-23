@@ -98,6 +98,50 @@ async function assertNoDistributionOverlap(
   }
 }
 
+async function assertNoMessageCopyOverlap(input: {
+  experimentId: string;
+  niche: string | null;
+}) {
+  const supabase = createSupabaseAdminClient();
+
+  const base = () =>
+    supabase
+      .from("experiments")
+      .select("id,name,niche")
+      .eq("status", "running")
+      .eq("kind", "message_copy")
+      .neq("id", input.experimentId);
+
+  if (!input.niche) {
+    const { data, error } = await base();
+    if (error) throw error;
+
+    if ((data ?? []).length > 0) {
+      throw new Error(
+        "A global message-copy experiment would overlap another running message-copy experiment."
+      );
+    }
+    return;
+  }
+
+  const [exact, global] = await Promise.all([
+    base().eq("niche", input.niche),
+    base().is("niche", null)
+  ]);
+
+  const error = exact.error || global.error;
+  if (error) throw error;
+
+  if (
+    (exact.data ?? []).length > 0 ||
+    (global.data ?? []).length > 0
+  ) {
+    throw new Error(
+      "Another running message-copy experiment overlaps this niche."
+    );
+  }
+}
+
 export async function setExperimentStatus(
   experimentId: string,
   status: "running" | "paused" | "completed"
@@ -126,26 +170,10 @@ export async function setExperimentStatus(
       );
     }
 
-    let activeQuery = supabase
-      .from("experiments")
-      .select("id,name,niche")
-      .eq("status", "running")
-      .eq("kind", "message_copy")
-      .neq("id", experimentId);
-
-    activeQuery = experiment.niche
-      ? activeQuery.eq("niche", experiment.niche)
-      : activeQuery.is("niche", null);
-
-    const { data: conflicts, error: conflictError } =
-      await activeQuery;
-
-    if (conflictError) throw conflictError;
-    if ((conflicts ?? []).length > 0) {
-      throw new Error(
-        "Another message-copy experiment is already running for this scope."
-      );
-    }
+    await assertNoMessageCopyOverlap({
+      experimentId,
+      niche: experiment.niche ?? null
+    });
 
     await assertNoDistributionOverlap(
       experiment.niche ?? null
