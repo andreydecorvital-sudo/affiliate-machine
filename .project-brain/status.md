@@ -61,6 +61,10 @@ Visual relevante continua adiado até validação real de:
 - Message-copy Experiment Engine: CODE_READY / LIVE_SAMPLE_PENDING
 - Deterministic delivery assignment: CODE_READY / LIVE_SAMPLE_PENDING
 - Experiment CVR/RPC/commission metrics: CODE_READY / LIVE_SAMPLE_PENDING
+- Meta Ads read-only provider: CODE_READY / CREDENTIALS_PENDING
+- Meta Ads daily campaign insights sync: CODE_READY / LIVE_API_PENDING
+- Meta campaign mapping to UTM campaignKey: CODE_READY / LIVE_MAPPING_PENDING
+- Meta campaign spend → paid economics: CODE_READY / LIVE_DATA_PENDING
 
 ### Next blocker
 - Dedicated Supabase project + migrations: PENDING_USER_INFRA_PHASE
@@ -71,9 +75,9 @@ Visual relevante continua adiado até validação real de:
 - one controlled end-to-end canary: PENDING
 
 ### Next code opportunity
-- Meta Ads read-only ingestion: NEXT
 - timing experiments: NEXT
 - group-allocation experiments: NEXT
+- acquisition creative attribution: NEXT
 
 ### Later
 - TikTok/Amazon affiliate providers: FUTURE
@@ -95,6 +99,7 @@ Visual relevante continua adiado até validação real de:
 - PR #9 — Hunter Strategies / Origin Memory / Cooldown
 - PR #10 — Learning Engine / Money Feedback Loop
 - PR #11 — Paid Economics / Experiment Engine
+- PR #12 — Meta Ads Read-only Ingestion
 
 ## Evidence
 
@@ -108,6 +113,7 @@ Visual relevante continua adiado até validação real de:
 - Hunter Strategies CI: typecheck ✅ tests ✅ build ✅
 - Learning Engine CI: typecheck ✅ tests ✅ build ✅
 - Paid Economics / Experiment Engine CI: typecheck ✅ tests ✅ build ✅
+- Meta Ads Read-only CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
