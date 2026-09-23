@@ -1,37 +1,38 @@
-# Chat 1 — FOUNDATION / DB / JOBS / EVENTS
+# Chat 1 — FOUNDATION / SUPABASE / VERCEL
 
-Branch: `feat/foundation-platform`
+Branch: `feat/foundation-platform`.
 
-Escopo EXCLUSIVO:
-- estrutura real do monorepo;
-- PostgreSQL;
-- migrations;
-- configuração/secret handling;
-- pg-boss;
-- audit log;
+Escopo:
+- monorepo real;
+- Next.js;
+- Supabase Postgres;
+- Supabase Queues/pgmq;
+- Supabase Cron;
+- config/secrets;
 - universal events;
+- audit;
+- idempotência;
 - health/readiness;
 - feature gates;
-- testes de idempotência da fundação.
+- adapter Gemini seguro.
 
-Não implementar Shopee, WhatsApp, Meta Ads ou frontend de negócio.
+Não usar pg-boss, Redis ou worker server dedicado.
 
-Requisitos:
-- schema inicial alinhado a docs/DATABASE.md;
-- migrations determinísticas;
-- jobs com retry/backoff/dead-letter;
-- helper de idempotency key;
-- API/contract para registrar eventos;
-- gates `AUTOPILOT_ENABLED`, `WHATSAPP_REAL_SEND_ENABLED`, `META_ADS_WRITE_ENABLED` desligados por padrão;
-- health do DB/jobs;
-- sem Redis.
+Regras:
+- RLS em tabelas públicas;
+- secrets apenas server-side;
+- service role nunca no browser;
+- SECURITY DEFINER somente com grants restritos;
+- gates reais OFF;
+- Gemini não é requisito de saúde do core.
 
 Definition of Done:
-- ambiente local sobe com Postgres;
-- migration aplica do zero;
-- job canário executa exatamente uma vez mesmo com retry;
-- evento duplicado é deduplicado;
+- app Next compila;
+- migration aplica em Supabase limpo;
+- filas existem;
+- enqueue/read/archive funcionam com service_role;
+- health reporta DB/Gemini/gates;
 - testes passam;
 - Project Brain atualizado.
 
-Não faça merge nem deploy.
+Não faça merge sem revisão.

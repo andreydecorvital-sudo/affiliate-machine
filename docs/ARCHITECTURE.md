@@ -1,96 +1,61 @@
 # Arquitetura
 
-## Visão
+## Decisão vigente
+
+A infraestrutura operacional da Affiliate Machine fica concentrada em **Vercel + Supabase**.
+
+- Vercel: Next.js, APIs, shortlinks, landing, processamento Node, Sharp, integrações e frontend.
+- Supabase: Postgres, Auth, Storage, Queues, Cron, Realtime e estado operacional.
+- Gemini API: provider principal de IA. A indisponibilidade do Gemini nunca pode parar o core determinístico.
+
+## Fluxo principal
 
 ```text
-                      ┌──────────────────────┐
-                      │ Affiliate Providers  │
-                      │ Shopee/TikTok/Amazon │
-                      └──────────┬───────────┘
-                                 ↓
-                           Offer Hunter
-                                 ↓
-                     Product + Offer Snapshots
-                                 ↓
-                           Score Engine
-                                 ↓
-                        Opportunity Queue
-                                 ↓
-                 Affiliate Link / Attribution IDs
-                                 ↓
-                         Creative Engine
-                                 ↓
-                             posts
-                                 ↓
-                         pg-boss scheduler
-                                 ↓
-                      WhatsApp Distributor
-                                 ↓
-            ┌────────────────────┼────────────────────┐
-            ↓                    ↓                    ↓
-          Group A              Group B              Group C
-
-Click → Shortlink → click_events → Marketplace → Conversion → Commission Ledger
-
-Meta Ads → Landing → Group Router → Cohort → Group
+Affiliate Providers
+        ↓
+   Vercel API
+        ↓
+Supabase Postgres
+        ↓
+Offer Snapshot
+        ↓
+Deterministic Score
+        ↓
+Supabase Queue
+        ↓
+Vercel processor
+        ↓
+Distribution / Tracking
 ```
 
-## Runtime
+## Background jobs
 
-### Web
-- Next.js.
-- Dashboard operacional.
-- Platform Admin.
-- Landing/group router.
-- APIs internas.
+Supabase Queues usa `pgmq`. Não usamos pg-boss, Redis, Kafka ou RabbitMQ no MVP.
 
-### Worker
-- Hunter.
-- Revalidation.
-- Score.
-- Conversion sync.
-- Analytics aggregation.
-- Scheduled jobs.
+Filas:
+- offer_hunting
+- offer_revalidation
+- creative_generation
+- post_distribution
+- conversion_sync
+- analytics_rollup
 
-### WhatsApp Worker
-- Processo persistente.
-- Baileys.
-- N sessões.
-- Cache/runtime de conexão.
-- Busca de grupos.
-- Envio mídia/texto.
-- ACK/health/reconnect.
+Supabase Cron agenda produtores/consumidores. Jobs continuam idempotentes porque visibility timeout não substitui idempotência de efeitos externos.
 
-### PostgreSQL
-Única fonte persistente inicial.
+## Gemini
 
-## Integrações por adapters
+Gemini é a exceção aprovada entre APIs de IA gratuitas.
 
-```ts
-interface AffiliateProvider {
-  searchOffers(input): Promise<OfferPage>
-  getOffer(id): Promise<OfferSnapshot>
-  createAffiliateLink(input): Promise<AffiliateLink>
-  getConversions(input): Promise<ConversionPage>
-}
+Usar para copy, classificação semântica, visão, enriquecimento e variantes.
 
-interface WhatsAppProvider {
-  connect(accountId): Promise<void>
-  listGroups(accountId): Promise<Group[]>
-  send(delivery): Promise<SendResult>
-  health(accountId): Promise<Health>
-}
-```
+Não usar para cálculo financeiro, dedupe, idempotência, autorização ou decisão irreversível sem gate.
 
-## Padrões herdados da Argo
+Se Gemini falhar, templates e regras determinísticas mantêm o sistema operacional.
 
-- idempotência explícita;
-- audit trail;
-- source of truth claro;
-- dry-run/shadow mode;
-- durable jobs;
-- eventos universais;
-- circuit breaker;
-- feature gates;
-- health/readiness;
-- Frontend Zero e Platform Admin separados.
+## Segurança
+
+- RLS em toda tabela pública criada pelo projeto.
+- Nenhum secret em `NEXT_PUBLIC_*`.
+- service role/secret key somente server-side.
+- SECURITY DEFINER com search_path vazio, grants explícitos e revogação de PUBLIC.
+- gates reais permanecem OFF por padrão.

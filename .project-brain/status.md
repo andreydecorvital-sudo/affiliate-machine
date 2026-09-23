@@ -2,14 +2,18 @@
 
 ## Current phase
 
-`PHASE 0 — PLANNING / FOUNDATION NOT STARTED`
+`PHASE 0 — FOUNDATION BUILDING`
 
 ## Capability status
 
-- Platform foundation: PLANNED
-- PostgreSQL schema: PLANNED
-- pg-boss jobs: PLANNED
-- Universal events: PLANNED
+- Platform foundation: BUILDING
+- Next.js/Vercel surface: BUILDING
+- PostgreSQL schema: BUILDING
+- Supabase Queues: BUILDING
+- Supabase Cron: BUILDING
+- Universal events: BUILDING
+- Audit/idempotency: BUILDING
+- Gemini adapter: BUILDING
 - Shopee Affiliate provider: PLANNED
 - Offer snapshots: PLANNED
 - Score engine: PLANNED
@@ -27,6 +31,10 @@
 - Meta Ads: PLANNED
 - Learning/experiments: PLANNED
 
+## Architecture decision
+
+Runtime and infrastructure target: Vercel + Supabase. Gemini is the approved primary AI provider, with deterministic degradation when unavailable.
+
 ## Rule
 
-A capability only changes status with evidence in a PR/commit and an update to this file.
+A capability becomes READY only with test/build evidence and, when applicable, validation against a real Supabase project.
