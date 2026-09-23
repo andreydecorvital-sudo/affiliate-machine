@@ -7,6 +7,12 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   GEMINI_API_KEY: z.string().min(1).optional(),
   GEMINI_MODEL: z.string().min(1).default("gemini-flash-latest"),
+  SHOPEE_AFFILIATE_APP_ID: z.string().min(1).optional(),
+  SHOPEE_AFFILIATE_SECRET: z.string().min(1).optional(),
+  SHOPEE_AFFILIATE_GRAPHQL_URL: z
+    .string()
+    .url()
+    .default("https://open-api.affiliate.shopee.com.br/graphql"),
   INTERNAL_JOB_SECRET: z.string().min(16).optional(),
   AUTOPILOT_ENABLED: z.enum(["0", "1"]).default("0"),
   WHATSAPP_REAL_SEND_ENABLED: z.enum(["0", "1"]).default("0"),
@@ -23,6 +29,9 @@ export function getServerEnv(): ServerEnv {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     GEMINI_MODEL: process.env.GEMINI_MODEL,
+    SHOPEE_AFFILIATE_APP_ID: process.env.SHOPEE_AFFILIATE_APP_ID,
+    SHOPEE_AFFILIATE_SECRET: process.env.SHOPEE_AFFILIATE_SECRET,
+    SHOPEE_AFFILIATE_GRAPHQL_URL: process.env.SHOPEE_AFFILIATE_GRAPHQL_URL,
     INTERNAL_JOB_SECRET: process.env.INTERNAL_JOB_SECRET,
     AUTOPILOT_ENABLED: process.env.AUTOPILOT_ENABLED,
     WHATSAPP_REAL_SEND_ENABLED: process.env.WHATSAPP_REAL_SEND_ENABLED,

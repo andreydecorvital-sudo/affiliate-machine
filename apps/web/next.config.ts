@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@affiliate/core"],
+  transpilePackages: ["@affiliate/core", "@affiliate/providers"],
   poweredByHeader: false
 };
 

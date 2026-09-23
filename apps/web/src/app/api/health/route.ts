@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getFeatureGates } from "@/lib/feature-gates";
 import { getServerEnv, getSupabaseServerKey } from "@/lib/env";
 import { isGeminiConfigured } from "@/lib/gemini";
+import { isShopeeAffiliateConfigured } from "@/lib/shopee/client";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -40,7 +41,8 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       dependencies: {
         supabase: database,
-        gemini: isGeminiConfigured() ? "configured" : "not_configured"
+        gemini: isGeminiConfigured() ? "configured" : "not_configured",
+        shopeeAffiliate: isShopeeAffiliateConfigured() ? "configured" : "not_configured"
       },
       gates: getFeatureGates(),
       diagnostics: databaseError ? { databaseError } : undefined
