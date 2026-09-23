@@ -35,10 +35,10 @@ test("delivery idempotency key is stable", () => {
 });
 
 test("replaces only the offer tracking URL", () => {
-  const original = "Produto\\n\\n👉 https://x.test/go/OLD123";
+  const original = "Produto\n\n👉 https://x.test/go/OLD123";
   assert.equal(
     replaceOfferTrackingUrl(original, "https://x.test/go/NEW456"),
-    "Produto\\n\\n👉 https://x.test/go/NEW456"
+    "Produto\n\n👉 https://x.test/go/NEW456"
   );
 });
 
