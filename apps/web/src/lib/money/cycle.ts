@@ -87,18 +87,21 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
   const niche = input.niche?.trim() || "general";
   const keyword = input.keyword?.trim() || null;
 
-  const offers = await runStep(() =>
-    keyword
-      ? syncShopeeOffers({
-          keyword,
-          page: 1,
-          limit: offerLimit
-        }, {
-          niche,
-          strategyName: "manual-keyword"
-        })
-      : runHunter({ strategyLimit: hunterStrategyLimit })
-  );
+  const offers = keyword
+    ? await runStep(() =>
+        syncShopeeOffers(
+          {
+            keyword,
+            page: 1,
+            limit: offerLimit
+          },
+          {
+            niche,
+            strategyName: "manual-keyword"
+          }
+        )
+      )
+    : await runStep(() => runHunter({ strategyLimit: hunterStrategyLimit }));
 
   const scoring = await runStep(() => scoreUnscoredOffers(scoreLimit));
 
