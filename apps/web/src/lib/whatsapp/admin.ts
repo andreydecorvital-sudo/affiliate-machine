@@ -41,6 +41,8 @@ export async function configureWhatsAppGroup(input: {
   niche: string;
   active: boolean;
   acceptingTraffic: boolean;
+  inviteUrl?: string | null;
+  capacityLimit?: number | null;
 }) {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
@@ -48,10 +50,12 @@ export async function configureWhatsAppGroup(input: {
     .update({
       niche: input.niche.trim() || "general",
       active: input.active,
-      accepting_traffic: input.acceptingTraffic
+      accepting_traffic: input.acceptingTraffic,
+      invite_url: input.inviteUrl?.trim() || null,
+      capacity_limit: input.capacityLimit ?? null
     })
     .eq("id", input.groupId)
-    .select("id,account_id,group_jid,name,member_count,niche,active,accepting_traffic")
+    .select("id,account_id,group_jid,name,member_count,niche,active,accepting_traffic,invite_url,capacity_limit,last_routed_at")
     .single();
 
   if (error) throw error;
