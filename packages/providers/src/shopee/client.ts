@@ -1,10 +1,10 @@
-import { buildShopeeAuthorization } from "./auth.ts";
-import { normalizeShopeeConversion, normalizeShopeeOffer } from "./normalize.ts";
+import { buildShopeeAuthorization } from "./auth";
+import { normalizeShopeeConversion, normalizeShopeeOffer } from "./normalize";
 import {
   CONVERSION_REPORT_QUERY,
   GENERATE_SHORT_LINK_MUTATION,
   PRODUCT_OFFERS_QUERY
-} from "./queries.ts";
+} from "./queries";
 import type {
   ConversionReportPage,
   ConversionReportParams,
@@ -12,7 +12,7 @@ import type {
   ProductOffersPage,
   ShopeeProductOfferRaw,
   ShortLinkInput
-} from "./types.ts";
+} from "./types";
 
 type GraphQLError = {
   message?: string;
