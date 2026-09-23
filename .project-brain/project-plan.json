@@ -2,16 +2,19 @@
   "project": {
     "name": "Affiliate Machine",
     "purpose": "Automated affiliate acquisition, WhatsApp distribution and attribution engine",
-    "status": "PLANNED"
+    "status": "BUILDING",
+    "infrastructure": ["vercel", "supabase", "gemini"]
   },
   "areas": [
     {
       "id": "platform",
       "label": "Platform",
       "features": [
-        {"id":"foundation","label":"Foundation","role":"config, auth, secrets, audit, health, feature gates","status":"PLANNED"},
-        {"id":"jobs","label":"Jobs","role":"durable jobs via pg-boss","status":"PLANNED"},
-        {"id":"events","label":"Universal Events","role":"append-only operational event timeline","status":"PLANNED"}
+        {"id":"foundation","label":"Foundation","role":"Next.js, config, auth, secrets, audit, health, feature gates","status":"BUILDING"},
+        {"id":"jobs","label":"Supabase Queues","role":"durable jobs via pgmq","status":"BUILDING"},
+        {"id":"cron","label":"Supabase Cron","role":"scheduling via pg_cron","status":"BUILDING"},
+        {"id":"events","label":"Universal Events","role":"append-only operational event timeline","status":"BUILDING"},
+        {"id":"gemini","label":"Gemini","role":"primary AI provider with deterministic degradation","status":"BUILDING"}
       ]
     },
     {
@@ -37,7 +40,7 @@
       "label": "Creative",
       "features": [
         {"id":"copy","label":"Copy Engine","role":"message generation and variants","status":"PLANNED"},
-        {"id":"image","label":"Image Engine","role":"static creative generation with Sharp","status":"PLANNED"},
+        {"id":"image","label":"Image Engine","role":"static creative generation","status":"PLANNED"},
         {"id":"video","label":"Video Engine","role":"future programmatic video","status":"FUTURE"}
       ]
     },
@@ -45,7 +48,7 @@
       "id": "distribution",
       "label": "Distribution",
       "features": [
-        {"id":"whatsapp-sessions","label":"WhatsApp Sessions","role":"multi-session Baileys runtime","status":"PLANNED"},
+        {"id":"whatsapp-sessions","label":"WhatsApp Sessions","role":"session runtime behind adapter","status":"PLANNED"},
         {"id":"groups","label":"WhatsApp Groups","role":"group inventory, niches, capacity and health","status":"PLANNED"},
         {"id":"posts","label":"Posts","role":"logical scheduled publications","status":"PLANNED"},
         {"id":"deliveries","label":"Deliveries","role":"idempotent post x group execution","status":"PLANNED"}
@@ -81,6 +84,9 @@
     }
   ],
   "relations": [
+    {"from":"platform:cron","to":"platform:jobs","type":"schedules","label":"producers and consumers"},
+    {"from":"platform:jobs","to":"platform:events","type":"emits","label":"job lifecycle evidence"},
+    {"from":"platform:gemini","to":"creative:copy","type":"enriches","label":"optional AI generation"},
     {"from":"affiliate-commerce:shopee","to":"intelligence:snapshots","type":"feeds","label":"offers and commercial facts"},
     {"from":"intelligence:snapshots","to":"intelligence:score","type":"scores","label":"historical opportunity context"},
     {"from":"intelligence:score","to":"distribution:posts","type":"creates","label":"approved opportunities become posts"},
@@ -90,7 +96,6 @@
     {"from":"distribution:whatsapp-sessions","to":"distribution:deliveries","type":"executes","label":"send via connected session"},
     {"from":"distribution:groups","to":"distribution:deliveries","type":"targets","label":"delivery destination"},
     {"from":"distribution:posts","to":"attribution:shortlinks","type":"uses","label":"trackable outbound link"},
-    {"from":"attribution:shortlinks","to":"attribution:conversions","type":"correlates","label":"click to provider conversion"},
     {"from":"affiliate-commerce:shopee","to":"attribution:conversions","type":"feeds","label":"conversion report"},
     {"from":"attribution:conversions","to":"attribution:commission","type":"produces","label":"commission entries"},
     {"from":"acquisition:meta-ads","to":"acquisition:landing","type":"feeds","label":"traffic"},

@@ -84,6 +84,14 @@ revoke all on table public.universal_events from anon, authenticated;
 revoke all on table public.audit_log from anon, authenticated;
 revoke all on table public.health_snapshots from anon, authenticated;
 
+grant select, insert, update, delete on table public.app_settings to service_role;
+grant select, insert, update, delete on table public.feature_flags to service_role;
+grant select, insert, update, delete on table public.system_idempotency to service_role;
+grant select, insert, update, delete on table public.universal_events to service_role;
+grant select, insert, update, delete on table public.audit_log to service_role;
+grant select, insert, update, delete on table public.health_snapshots to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
 insert into public.app_settings (key, value)
 values ('system.version', '{"version":"0.1.0","phase":"foundation"}'::jsonb)
 on conflict (key) do update
@@ -198,10 +206,79 @@ begin
 end;
 $$;
 
+create or replace function public.claim_idempotency(
+  idempotency_key text,
+  idempotency_scope text,
+  hash_value text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  inserted_rows integer;
+begin
+  insert into public.system_idempotency(key, scope, payload_hash)
+  values (idempotency_key, idempotency_scope, hash_value)
+  on conflict (key) do nothing;
+
+  get diagnostics inserted_rows = row_count;
+  return inserted_rows = 1;
+end;
+$$;
+
+create or replace function public.record_event(
+  p_event_type text,
+  p_source text,
+  p_entity_type text default null,
+  p_entity_id text default null,
+  p_idempotency_key text default null,
+  p_correlation_id text default null,
+  p_payload jsonb default '{}'::jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_id uuid;
+begin
+  insert into public.universal_events(
+    event_type,
+    source,
+    entity_type,
+    entity_id,
+    idempotency_key,
+    correlation_id,
+    payload
+  )
+  values (
+    p_event_type,
+    p_source,
+    p_entity_type,
+    p_entity_id,
+    p_idempotency_key,
+    p_correlation_id,
+    coalesce(p_payload, '{}'::jsonb)
+  )
+  on conflict (idempotency_key) where idempotency_key is not null
+  do update set idempotency_key = excluded.idempotency_key
+  returning id into event_id;
+
+  return event_id;
+end;
+$$;
+
 revoke all on function public.enqueue_job(text, jsonb, integer) from public, anon, authenticated;
 revoke all on function public.read_jobs(text, integer, integer) from public, anon, authenticated;
 revoke all on function public.archive_job(text, bigint) from public, anon, authenticated;
+revoke all on function public.claim_idempotency(text, text, text) from public, anon, authenticated;
+revoke all on function public.record_event(text, text, text, text, text, text, jsonb) from public, anon, authenticated;
 
 grant execute on function public.enqueue_job(text, jsonb, integer) to service_role;
 grant execute on function public.read_jobs(text, integer, integer) to service_role;
 grant execute on function public.archive_job(text, bigint) to service_role;
+grant execute on function public.claim_idempotency(text, text, text) to service_role;
+grant execute on function public.record_event(text, text, text, text, text, text, jsonb) to service_role;
