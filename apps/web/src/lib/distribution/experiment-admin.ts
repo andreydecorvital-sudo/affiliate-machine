@@ -233,7 +233,10 @@ export async function getDistributionExperimentPerformance(
   const arms = performance.data ?? [];
   const sampleReady =
     arms.length === 2 &&
-    arms.every((arm) => arm.sample_ready === true);
+    arms.every(
+      (arm: { sample_ready?: boolean | null }) =>
+        arm.sample_ready === true
+    );
 
   return {
     experiment,
