@@ -1,34 +1,49 @@
 import { z } from "zod";
 
+const emptyToUndefined = (value: unknown) =>
+  typeof value === "string" && value.trim() === "" ? undefined : value;
+
+const optionalString = (min = 1) =>
+  z.preprocess(emptyToUndefined, z.string().min(min).optional());
+
+const optionalUrl = () =>
+  z.preprocess(emptyToUndefined, z.string().url().optional());
+
+const optionalGate = () =>
+  z.preprocess(emptyToUndefined, z.enum(["0", "1"]).default("0"));
+
 const serverSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-  SUPABASE_SECRET_KEY: z.string().min(1).optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  APP_ACCESS_PASSWORD: z.string().min(12).optional(),
-  GEMINI_API_KEY: z.string().min(1).optional(),
-  GEMINI_MODEL: z.string().min(1).default("gemini-flash-latest"),
-  SHOPEE_AFFILIATE_APP_ID: z.string().min(1).optional(),
-  SHOPEE_AFFILIATE_SECRET: z.string().min(1).optional(),
-  SHOPEE_AFFILIATE_GRAPHQL_URL: z
-    .string()
-    .url()
-    .default("https://open-api.affiliate.shopee.com.br/graphql"),
-  INTERNAL_JOB_SECRET: z.string().min(16).optional(),
-  AUTOPILOT_ENABLED: z.enum(["0", "1"]).default("0"),
-  WHATSAPP_REAL_SEND_ENABLED: z.enum(["0", "1"]).default("0"),
-  META_ADS_WRITE_ENABLED: z.enum(["0", "1"]).default("0"),
-  META_ACCESS_TOKEN: z.string().min(1).optional(),
-  META_AD_ACCOUNT_ID: z.string().min(1).optional(),
-  META_GRAPH_API_VERSION: z
-    .string()
-    .regex(/^v\d+\.\d+$/)
-    .optional(),
-  META_GRAPH_BASE_URL: z
-    .string()
-    .url()
-    .default("https://graph.facebook.com")
+  NEXT_PUBLIC_SUPABASE_URL: optionalUrl(),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optionalString(),
+  NEXT_PUBLIC_APP_URL: optionalUrl(),
+  SUPABASE_SECRET_KEY: optionalString(),
+  SUPABASE_SERVICE_ROLE_KEY: optionalString(),
+  APP_ACCESS_PASSWORD: optionalString(12),
+  GEMINI_API_KEY: optionalString(),
+  GEMINI_MODEL: z.preprocess(
+    emptyToUndefined,
+    z.string().min(1).default("gemini-flash-latest")
+  ),
+  SHOPEE_AFFILIATE_APP_ID: optionalString(),
+  SHOPEE_AFFILIATE_SECRET: optionalString(),
+  SHOPEE_AFFILIATE_GRAPHQL_URL: z.preprocess(
+    emptyToUndefined,
+    z.string().url().default("https://open-api.affiliate.shopee.com.br/graphql")
+  ),
+  INTERNAL_JOB_SECRET: optionalString(16),
+  AUTOPILOT_ENABLED: optionalGate(),
+  WHATSAPP_REAL_SEND_ENABLED: optionalGate(),
+  META_ADS_WRITE_ENABLED: optionalGate(),
+  META_ACCESS_TOKEN: optionalString(),
+  META_AD_ACCOUNT_ID: optionalString(),
+  META_GRAPH_API_VERSION: z.preprocess(
+    emptyToUndefined,
+    z.string().regex(/^v\d+\.\d+$/).optional()
+  ),
+  META_GRAPH_BASE_URL: z.preprocess(
+    emptyToUndefined,
+    z.string().url().default("https://graph.facebook.com")
+  )
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
