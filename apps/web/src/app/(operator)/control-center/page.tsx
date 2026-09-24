@@ -15,20 +15,24 @@ function pillState(state: string) {
   return "muted" as const;
 }
 
+function categoryLabel(category: string) {
+  if (category === "infra") return "Infra";
+  if (category === "revenue") return "Receita";
+  if (category === "distribution") return "Distribuição";
+  return "Safety";
+}
+
 export default async function ControlCenterPage() {
   const data = await getCanaryReadiness();
   const ready = data.checks.filter((item) => item.state === "ready").length;
   const blocked = data.checks.filter((item) => item.state === "blocked").length;
-  const warnings = data.checks.filter(
-    (item) => item.state === "warning"
-  ).length;
 
   return (
     <main className="page">
       <PageHeader
         eyebrow="CANARY READINESS"
         title="Control Center"
-        description="O gate operacional antes de colocar dinheiro, tráfego e WhatsApp real na máquina. Se algo crítico estiver quebrado, o canário não deve começar."
+        description="O painel separa o que já está pronto, o que a máquina consegue resolver e o que ainda depende de uma configuração sua antes de qualquer envio real."
         actions={
           <StatusPill
             state={
@@ -58,9 +62,10 @@ export default async function ControlCenterPage() {
           tone={blocked > 0 ? "warning" : "positive"}
         />
         <MetricCard
-          label="Avisos"
-          value={String(warnings)}
-          hint="não bloqueiam sozinhos"
+          label="Ações suas"
+          value={String(data.actions.manual.length)}
+          hint="configurações manuais pendentes"
+          tone={data.actions.manual.length > 0 ? "warning" : "positive"}
         />
         <MetricCard
           label="Dry-run"
@@ -68,6 +73,75 @@ export default async function ControlCenterPage() {
           hint="sem envio real"
           tone={data.readiness.dryRunReady ? "positive" : "warning"}
         />
+      </section>
+
+      <section className="content-grid content-grid-wide">
+        <Panel title="Próximas ações" eyebrow="ACTION QUEUE">
+          <div className="issue-stack">
+            {data.actions.manual.length === 0 ? (
+              <div className="issue-card">
+                <StatusPill state="good">Sem pendências manuais</StatusPill>
+                <strong>Nada depende de você neste momento.</strong>
+                <p>A fila restante pode ser executada pela própria máquina em modo seguro.</p>
+              </div>
+            ) : (
+              data.actions.manual.slice(0, 6).map((item) => (
+                <div className="issue-card" key={item.key}>
+                  <StatusPill state={pillState(item.state)}>
+                    {categoryLabel(item.category)}
+                  </StatusPill>
+                  <strong>{item.label}</strong>
+                  <p>{item.action}</p>
+                </div>
+              ))
+            )}
+
+            {data.actions.system.slice(0, 2).map((item) => (
+              <div className="issue-card" key={item.key}>
+                <StatusPill state="muted">Máquina</StatusPill>
+                <strong>{item.label}</strong>
+                <p>{item.action}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel title="Pipeline real" eyebrow="DATABASE">
+          <div className="flow-line">
+            {[
+              ["Estratégias", data.db.strategies],
+              ["Produtos", data.db.products],
+              ["Ofertas", data.db.offers],
+              ["Posts", data.db.posts],
+              ["Conversões", data.db.conversions]
+            ].map(([label, value], index) => (
+              <div className="flow-step" key={String(label)}>
+                <span>{String(label)}</span>
+                <strong>{String(value)}</strong>
+                {index < 4 ? <i>→</i> : null}
+              </div>
+            ))}
+          </div>
+
+          <div className="signal-grid">
+            <div>
+              <span>Banco</span>
+              <strong>{data.db.ok ? "Respondendo" : "Pendente"}</strong>
+            </div>
+            <div>
+              <span>Ingestão</span>
+              <strong>
+                {data.db.offers + data.db.products + data.db.posts > 0
+                  ? "Com atividade"
+                  : "Ainda zerada"}
+              </strong>
+            </div>
+            <div>
+              <span>Fila automática</span>
+              <strong>{data.actions.system.length} ação(ões)</strong>
+            </div>
+          </div>
+        </Panel>
       </section>
 
       <section className="content-grid content-grid-wide">
