@@ -5,6 +5,7 @@ import {
   StatusPill
 } from "@/components/operator/ui";
 import { getCanaryReadiness } from "@/lib/control-center/readiness";
+import { ControlCenterDryRun } from "@/components/operator/control-center-dry-run";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,10 @@ export default async function ControlCenterPage() {
       </section>
 
       <section className="content-grid content-grid-wide">
+        <Panel title="Dry-run seguro" eyebrow="EXECUTION">
+          <ControlCenterDryRun />
+        </Panel>
+
         <Panel title="Checklist operacional" eyebrow="READINESS">
           <div className="settings-list">
             {data.checks.map((item) => (
