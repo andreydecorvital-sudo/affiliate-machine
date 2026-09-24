@@ -3,8 +3,5 @@
   "framework": "nextjs",
   "installCommand": "pnpm install --frozen-lockfile --fetch-retries=5",
   "buildCommand": "pnpm build",
-  "outputDirectory": "apps/web/.next",
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "https://vftnoaafqyqjydeflknl.supabase.co"
-  }
+  "outputDirectory": "apps/web/.next"
 }
