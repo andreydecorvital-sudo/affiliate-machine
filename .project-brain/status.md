@@ -17,6 +17,7 @@ Visual relevante continua adiado até validação real de:
 ### Foundation
 - Platform foundation: LIVE_DB_READY
 - Frontend Zero operator interface: CODE_READY / VERCEL_PREVIEW_PENDING
+- Canary Readiness + Control Center: CODE_READY / LIVE_ENV_PENDING
 - Next.js/Vercel minimal surface: CODE_READY / DEPLOY_PENDING
 - PostgreSQL schema: LIVE_READY (20 migrations applied)
 - Supabase Queues: CODE_READY / LIVE_VALIDATION_PENDING
@@ -86,11 +87,12 @@ Visual relevante continua adiado até validação real de:
 - Gemini API key: PENDING
 - WhatsApp pairing + explicit group activation: PENDING
 - one controlled end-to-end canary: PENDING
+- live DB readiness: 0 WhatsApp accounts / 0 groups / all safety gates OFF
 
 ### Next code opportunity
-- canary readiness report: NEXT
 - operator authentication before public Vercel production: NEXT
 - creative mapping controls in UI: NEXT
+- WhatsApp pairing workflow: NEXT
 
 ### Later
 - TikTok/Amazon affiliate providers: FUTURE
@@ -116,6 +118,7 @@ Visual relevante continua adiado até validação real de:
 - PR #13 — Timing + Group Allocation Experiments
 - PR #14 — Frontend Zero Operator Interface
 - PR #15 — Creative Attribution + Paid Creative Learning
+- PR #16 — Canary Readiness + Control Center
 
 ## Live infrastructure
 
@@ -147,6 +150,7 @@ Visual relevante continua adiado até validação real de:
 - Timing + Group Allocation CI: typecheck ✅ tests ✅ build ✅
 - Frontend Zero Operator Interface CI: typecheck ✅ tests ✅ build ✅
 - Creative Attribution + Paid Learning CI: typecheck ✅ tests ✅ build ✅
+- Canary Readiness + Control Center CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
