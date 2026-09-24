@@ -135,7 +135,7 @@ begin
 
   insert into public.traffic_campaigns(campaign_key)
   values(clean_campaign_key)
-  on conflict (campaign_key) do nothing;
+  on conflict on constraint traffic_campaigns_campaign_key_key do nothing;
 
   select tc.id
   into target_campaign
