@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getMoneyAnalytics } from "@/lib/money/analytics";
 import { getLearningStatus } from "@/lib/learning/learning";
 import { getDistributionLearningStatus } from "@/lib/distribution/learning";
+import { getPaidCreativePerformance } from "@/lib/acquisition/paid-creatives";
 import {
   getMetaAdsReadOnlyStatus,
   listMetaCampaignLinks
@@ -198,21 +199,24 @@ export async function getAcquisitionPageData() {
       connected: false,
       economics: null,
       meta: null,
-      campaigns: []
+      campaigns: [],
+      creativeLearning: null
     };
   }
 
-  const [money, meta, campaigns] = await Promise.all([
+  const [money, meta, campaigns, creativeLearning] = await Promise.all([
     safe(() => getMoneyAnalytics(30)),
     safe(() => getMetaAdsReadOnlyStatus()),
-    safe(() => listMetaCampaignLinks())
+    safe(() => listMetaCampaignLinks()),
+    safe(() => getPaidCreativePerformance(30))
   ]);
 
   return {
     connected: true,
     economics: money.data?.paidTraffic ?? null,
     meta: meta.data,
-    campaigns: campaigns.data ?? []
+    campaigns: campaigns.data ?? [],
+    creativeLearning: creativeLearning.data
   };
 }
 
