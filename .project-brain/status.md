@@ -16,6 +16,7 @@ Visual relevante continua adiado até validação real de:
 
 ### Foundation
 - Platform foundation: CODE_READY / LIVE_DB_PENDING
+- Frontend Zero operator interface: CODE_READY / VERCEL_PREVIEW_PENDING
 - Next.js/Vercel minimal surface: CODE_READY / DEPLOY_PENDING
 - PostgreSQL schema: CODE_READY / MIGRATION_PENDING
 - Supabase Queues: CODE_READY / LIVE_VALIDATION_PENDING
@@ -73,8 +74,8 @@ Visual relevante continua adiado até validação real de:
 - Deterministic exploitation/exploration allocation: CODE_READY / LIVE_SAMPLE_PENDING
 
 ### Next blocker
-- Dedicated Supabase project + migrations: PENDING_USER_INFRA_PHASE
-- Vercel project/envs: PENDING_USER_INFRA_PHASE
+- Dedicated Supabase project + migrations: PENDING_ORG_CONFIRMATION
+- Vercel project/envs: PENDING_CONNECTOR_DEPLOY_ACCESS
 - Shopee affiliate credentials: PENDING
 - Gemini API key: PENDING
 - WhatsApp pairing + explicit group activation: PENDING
@@ -107,6 +108,7 @@ Visual relevante continua adiado até validação real de:
 - PR #11 — Paid Economics / Experiment Engine
 - PR #12 — Meta Ads Read-only Ingestion
 - PR #13 — Timing + Group Allocation Experiments
+- PR #14 — Frontend Zero Operator Interface
 
 ## Evidence
 
@@ -122,6 +124,7 @@ Visual relevante continua adiado até validação real de:
 - Paid Economics / Experiment Engine CI: typecheck ✅ tests ✅ build ✅
 - Meta Ads Read-only CI: typecheck ✅ tests ✅ build ✅
 - Timing + Group Allocation CI: typecheck ✅ tests ✅ build ✅
+- Frontend Zero Operator Interface CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
