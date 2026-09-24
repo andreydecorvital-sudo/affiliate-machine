@@ -143,6 +143,7 @@ Visual relevante continua adiado até validação real de:
 ## Architecture decision
 
 Runtime/infrastructure target: Vercel + Supabase.
+Strict isolation from Argoplace: no shared database, no shared runtime/envs, and no inclusion in Argoplace plans/add-ons.
 Gemini remains the approved primary AI provider, with deterministic degradation when unavailable.
 
 Paid traffic economics keeps exact and modeled metrics separate.
