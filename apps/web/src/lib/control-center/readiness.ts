@@ -9,12 +9,20 @@ import {
 import { callWhatsAppBridge } from "@/lib/whatsapp/bridge";
 
 export type CheckState = "ready" | "blocked" | "warning" | "optional";
+export type CheckCategory =
+  | "infra"
+  | "revenue"
+  | "distribution"
+  | "safety";
 
 export type ReadinessCheck = {
   key: string;
   label: string;
   state: CheckState;
   detail: string;
+  action?: string;
+  category: CheckCategory;
+  manualAction: boolean;
   requiredForDryRun: boolean;
   requiredForRealCanary: boolean;
 };
@@ -52,12 +60,27 @@ export async function getCanaryReadiness() {
     acceptingGroups: 0,
     accounts: 0,
     pairedAccounts: 0,
+    strategies: 0,
+    products: 0,
+    offers: 0,
+    posts: 0,
+    conversions: 0,
     error: hasSupabase ? null : "Supabase envs ausentes."
   };
 
   if (hasSupabase) {
     const supabase = createSupabaseAdminClient();
-    const [quota, money, groups, accounts] = await Promise.all([
+    const [
+      quota,
+      money,
+      groups,
+      accounts,
+      strategies,
+      products,
+      offers,
+      posts,
+      conversions
+    ] = await Promise.all([
       safe(async () => {
         const { data, error } = await supabase.rpc("distribution_quota_status");
         if (error) throw error;
@@ -83,13 +106,58 @@ export async function getCanaryReadiness() {
           .select("id,status");
         if (error) throw error;
         return data ?? [];
+      }),
+      safe(async () => {
+        const { count, error } = await supabase
+          .from("hunter_strategies")
+          .select("id", { count: "exact", head: true })
+          .eq("enabled", true);
+        if (error) throw error;
+        return count ?? 0;
+      }),
+      safe(async () => {
+        const { count, error } = await supabase
+          .from("affiliate_products")
+          .select("id", { count: "exact", head: true });
+        if (error) throw error;
+        return count ?? 0;
+      }),
+      safe(async () => {
+        const { count, error } = await supabase
+          .from("offer_snapshots")
+          .select("id", { count: "exact", head: true });
+        if (error) throw error;
+        return count ?? 0;
+      }),
+      safe(async () => {
+        const { count, error } = await supabase
+          .from("posts")
+          .select("id", { count: "exact", head: true });
+        if (error) throw error;
+        return count ?? 0;
+      }),
+      safe(async () => {
+        const { count, error } = await supabase
+          .from("conversions")
+          .select("id", { count: "exact", head: true });
+        if (error) throw error;
+        return count ?? 0;
       })
     ]);
 
     const groupRows = groups.data ?? [];
     const accountRows = accounts.data ?? [];
     dbHealth = {
-      ok: quota.ok && money.ok && groups.ok && accounts.ok,
+      ok:
+        quota.ok &&
+        money.ok &&
+        groups.ok &&
+        accounts.ok &&
+        strategies.ok &&
+        products.ok &&
+        offers.ok &&
+        posts.ok &&
+        conversions.ok,
       quotaOk: quota.ok,
       moneyOk: money.ok,
       groups: groupRows.length,
@@ -103,14 +171,31 @@ export async function getCanaryReadiness() {
           String(row.status ?? "").toLowerCase()
         )
       ).length,
+      strategies: strategies.data ?? 0,
+      products: products.data ?? 0,
+      offers: offers.data ?? 0,
+      posts: posts.data ?? 0,
+      conversions: conversions.data ?? 0,
       error:
         quota.error ||
         money.error ||
         groups.error ||
         accounts.error ||
+        strategies.error ||
+        products.error ||
+        offers.error ||
+        posts.error ||
+        conversions.error ||
         null
     };
   }
+
+  const hasPipelineData =
+    dbHealth.products +
+      dbHealth.offers +
+      dbHealth.posts +
+      dbHealth.conversions >
+    0;
 
   const checks: ReadinessCheck[] = [
     {
@@ -120,6 +205,11 @@ export async function getCanaryReadiness() {
       detail: dbHealth.ok
         ? "RPCs críticos e tabelas operacionais respondendo."
         : dbHealth.error ?? "Banco indisponível.",
+      action: dbHealth.ok
+        ? undefined
+        : "Adicionar NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SECRET_KEY no projeto da Vercel.",
+      category: "infra",
+      manualAction: !dbHealth.ok,
       requiredForDryRun: true,
       requiredForRealCanary: true
     },
@@ -130,6 +220,11 @@ export async function getCanaryReadiness() {
       detail: env.INTERNAL_JOB_SECRET
         ? "Jobs internos protegidos."
         : "Falta secret para proteger endpoints internos.",
+      action: env.INTERNAL_JOB_SECRET
+        ? undefined
+        : "Criar um INTERNAL_JOB_SECRET forte na Vercel antes de executar jobs internos.",
+      category: "infra",
+      manualAction: !env.INTERNAL_JOB_SECRET,
       requiredForDryRun: true,
       requiredForRealCanary: true
     },
@@ -139,9 +234,56 @@ export async function getCanaryReadiness() {
       state: env.NEXT_PUBLIC_APP_URL ? "ready" : "warning",
       detail: env.NEXT_PUBLIC_APP_URL
         ? env.NEXT_PUBLIC_APP_URL
-        : "Será definida quando o projeto Vercel existir.",
+        : "A aplicação funciona sem esta env, mas links absolutos ficam limitados.",
+      action: env.NEXT_PUBLIC_APP_URL
+        ? undefined
+        : "Definir NEXT_PUBLIC_APP_URL com a URL de produção quando o alias estiver estabilizado.",
+      category: "infra",
+      manualAction: !env.NEXT_PUBLIC_APP_URL,
       requiredForDryRun: false,
       requiredForRealCanary: true
+    },
+    {
+      key: "foundation",
+      label: "Fundação do Hunter",
+      state:
+        dbHealth.ok && dbHealth.strategies > 0
+          ? "ready"
+          : dbHealth.ok
+            ? "warning"
+            : "blocked",
+      detail:
+        dbHealth.strategies > 0
+          ? `${dbHealth.strategies} estratégia(s) Hunter ativa(s) no banco.`
+          : dbHealth.ok
+            ? "Banco responde, mas não há estratégia Hunter ativa."
+            : "Aguardando conexão com o banco.",
+      action:
+        dbHealth.ok && dbHealth.strategies === 0
+          ? "Reaplicar o seed/migration da fundação Hunter."
+          : undefined,
+      category: "revenue",
+      manualAction: false,
+      requiredForDryRun: true,
+      requiredForRealCanary: true
+    },
+    {
+      key: "pipeline-data",
+      label: "Dados reais do funil",
+      state: hasPipelineData ? "ready" : dbHealth.ok ? "warning" : "blocked",
+      detail: hasPipelineData
+        ? `${dbHealth.offers} oferta(s), ${dbHealth.products} produto(s), ${dbHealth.posts} post(s) e ${dbHealth.conversions} conversão(ões).`
+        : dbHealth.ok
+          ? "Fundação pronta, mas a ingestão real ainda não gerou ofertas/produtos/posts/conversões."
+          : "Aguardando conexão com o banco.",
+      action:
+        dbHealth.ok && !hasPipelineData
+          ? "Rodar primeiro sync read-only da Shopee e depois o Hunter em dry-run."
+          : undefined,
+      category: "revenue",
+      manualAction: false,
+      requiredForDryRun: false,
+      requiredForRealCanary: false
     },
     {
       key: "shopee",
@@ -150,6 +292,11 @@ export async function getCanaryReadiness() {
       detail: hasShopee
         ? "Credenciais configuradas; probe read-only disponível."
         : "APP_ID/SECRET pendentes.",
+      action: hasShopee
+        ? undefined
+        : "Adicionar SHOPEE_AFFILIATE_APP_ID e SHOPEE_AFFILIATE_SECRET.",
+      category: "revenue",
+      manualAction: !hasShopee,
       requiredForDryRun: true,
       requiredForRealCanary: true
     },
@@ -160,6 +307,11 @@ export async function getCanaryReadiness() {
       detail: hasGemini
         ? "API key configurada."
         : "GEMINI_API_KEY pendente.",
+      action: hasGemini
+        ? undefined
+        : "Adicionar GEMINI_API_KEY para geração/avaliação de copy.",
+      category: "revenue",
+      manualAction: !hasGemini,
       requiredForDryRun: true,
       requiredForRealCanary: true
     },
@@ -171,6 +323,12 @@ export async function getCanaryReadiness() {
         dbHealth.pairedAccounts > 0
           ? `${dbHealth.pairedAccounts} conta(s) pareada(s).`
           : "Nenhuma conta pareada no banco.",
+      action:
+        dbHealth.pairedAccounts > 0
+          ? undefined
+          : "Parear uma única conta no Control Center; envio real continua bloqueado.",
+      category: "distribution",
+      manualAction: dbHealth.pairedAccounts === 0,
       requiredForDryRun: false,
       requiredForRealCanary: true
     },
@@ -182,6 +340,12 @@ export async function getCanaryReadiness() {
         dbHealth.acceptingGroups > 0
           ? `${dbHealth.acceptingGroups} grupo(s) ativo(s) aceitando tráfego.`
           : "Nenhum grupo ativo e accepting_traffic=true.",
+      action:
+        dbHealth.acceptingGroups > 0
+          ? undefined
+          : "Selecionar apenas 1 grupo para o canário e marcar accepting_traffic=true.",
+      category: "distribution",
+      manualAction: dbHealth.acceptingGroups === 0,
       requiredForDryRun: false,
       requiredForRealCanary: true
     },
@@ -192,6 +356,11 @@ export async function getCanaryReadiness() {
       detail: meta.configured
         ? "Conta configurada para leitura."
         : "Opcional para o primeiro canário orgânico.",
+      action: meta.configured
+        ? undefined
+        : "Pode ficar para depois; não bloqueia o primeiro canário orgânico.",
+      category: "revenue",
+      manualAction: false,
       requiredForDryRun: false,
       requiredForRealCanary: false
     },
@@ -202,6 +371,11 @@ export async function getCanaryReadiness() {
       detail: gates.metaAdsWrite
         ? "Está ON e deve voltar para OFF antes do canário."
         : "OFF — estado seguro.",
+      action: gates.metaAdsWrite
+        ? "Desligar META_ADS_WRITE_ENABLED antes de qualquer canário."
+        : undefined,
+      category: "safety",
+      manualAction: gates.metaAdsWrite,
       requiredForDryRun: true,
       requiredForRealCanary: true
     },
@@ -212,6 +386,11 @@ export async function getCanaryReadiness() {
       detail: gates.autopilot
         ? "Está ON cedo demais; desligar antes do canário."
         : "OFF — canário continua manual/controlado.",
+      action: gates.autopilot
+        ? "Desligar AUTOPILOT_ENABLED antes de continuar."
+        : undefined,
+      category: "safety",
+      manualAction: gates.autopilot,
       requiredForDryRun: true,
       requiredForRealCanary: true
     },
@@ -222,6 +401,11 @@ export async function getCanaryReadiness() {
       detail: gates.whatsappRealSend
         ? "ON — só deve permanecer assim durante a janela do canário."
         : "OFF — bloqueio seguro até a hora do canário.",
+      action: gates.whatsappRealSend
+        ? "Voltar WHATSAPP_REAL_SEND_ENABLED para 0 fora da janela controlada."
+        : undefined,
+      category: "safety",
+      manualAction: gates.whatsappRealSend,
       requiredForDryRun: true,
       requiredForRealCanary: false
     }
@@ -233,12 +417,28 @@ export async function getCanaryReadiness() {
   const realCanaryBlockers = checks.filter(
     (item) => item.requiredForRealCanary && item.state === "blocked"
   );
+  const manualActions = checks.filter(
+    (item) =>
+      item.manualAction &&
+      Boolean(item.action) &&
+      ["blocked", "warning"].includes(item.state)
+  );
+  const systemActions = checks.filter(
+    (item) =>
+      !item.manualAction &&
+      Boolean(item.action) &&
+      ["blocked", "warning"].includes(item.state)
+  );
 
   return {
     generatedAt: new Date().toISOString(),
     checks,
     gates,
     db: dbHealth,
+    actions: {
+      manual: manualActions,
+      system: systemActions
+    },
     readiness: {
       dryRunReady: dryRunBlockers.length === 0,
       realCanaryPrerequisitesReady: realCanaryBlockers.length === 0,
