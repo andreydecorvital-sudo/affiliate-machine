@@ -63,6 +63,9 @@ export default async function SystemPage() {
               ["conversions", "Conversões"],
               ["commission_ledger", "Comissões"],
               ["paid_traffic_spend", "Spend"],
+              ["paid_creatives", "Criativos pagos"],
+              ["paid_creative_spend", "Spend criativo"],
+              ["paid_creative_metrics", "Learning criativo"],
               ["experiments", "Experimentos"]
             ].map(([table, label]) => (
               <div className="database-card" key={table}>
