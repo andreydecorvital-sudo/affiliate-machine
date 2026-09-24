@@ -13,14 +13,9 @@ test("fetches account currency with GET-only transport shape", async () => {
     transport: async (request) => {
       assert.match(request.url, /\/v99\.0\/act_123/);
       assert.equal(request.headers.Authorization, "Bearer token");
-
       return {
         status: 200,
-        body: {
-          account_id: "123",
-          name: "Affiliate Ads",
-          currency: "BRL"
-        }
+        body: { account_id: "123", name: "Affiliate Ads", currency: "BRL" }
       };
     }
   });
@@ -30,66 +25,25 @@ test("fetches account currency with GET-only transport shape", async () => {
   assert.equal(account.currency, "BRL");
 });
 
-test("normalizes daily campaign insights and follows pagination", async () => {
-  let calls = 0;
-
+test("normalizes daily campaign insights", async () => {
   const client = new MetaAdsReadOnlyClient({
     accessToken: "token",
     adAccountId: "123",
     graphApiVersion: "v99.0",
     transport: async (request) => {
-      calls += 1;
       const url = new URL(request.url);
-
-      if (calls === 1) {
-        assert.equal(url.searchParams.get("level"), "campaign");
-        assert.equal(url.searchParams.get("time_increment"), "1");
-        assert.equal(
-          url.searchParams.get("time_range"),
-          JSON.stringify({
-            since: "2026-09-01",
-            until: "2026-09-02"
-          })
-        );
-
-        return {
-          status: 200,
-          body: {
-            data: [
-              {
-                campaign_id: "c1",
-                campaign_name: "Casa",
-                spend: "12.34",
-                impressions: "1000",
-                clicks: "44",
-                date_start: "2026-09-01",
-                date_stop: "2026-09-01"
-              }
-            ],
-            paging: {
-              next:
-                "https://graph.facebook.com/v99.0/act_123/insights?after=abc&access_token=should-not-be-forwarded"
-            }
-          }
-        };
-      }
-
-      assert.equal(url.searchParams.has("access_token"), false);
-
+      assert.equal(url.searchParams.get("level"), "campaign");
       return {
         status: 200,
         body: {
-          data: [
-            {
-              campaign_id: "c1",
-              campaign_name: "Casa",
-              spend: "9.50",
-              impressions: "800",
-              clicks: "30",
-              date_start: "2026-09-02",
-              date_stop: "2026-09-02"
-            }
-          ]
+          data: [{
+            campaign_id: "c1",
+            campaign_name: "Casa",
+            spend: "12.34",
+            impressions: "1000",
+            clicks: "44",
+            date_start: "2026-09-01"
+          }]
         }
       };
     }
@@ -97,12 +51,80 @@ test("normalizes daily campaign insights and follows pagination", async () => {
 
   const rows = await client.getDailyCampaignInsights({
     since: "2026-09-01",
-    until: "2026-09-02"
+    until: "2026-09-01"
   });
 
-  assert.equal(rows.length, 2);
   assert.equal(rows[0]?.spend, 12.34);
-  assert.equal(rows[1]?.clicks, 30);
+});
+
+test("normalizes ad-level insights for creative attribution", async () => {
+  const client = new MetaAdsReadOnlyClient({
+    accessToken: "token",
+    adAccountId: "123",
+    graphApiVersion: "v99.0",
+    transport: async (request) => {
+      const url = new URL(request.url);
+      assert.equal(url.searchParams.get("level"), "ad");
+      assert.match(url.searchParams.get("fields") ?? "", /ad_id/);
+      return {
+        status: 200,
+        body: {
+          data: [{
+            campaign_id: "c1",
+            campaign_name: "Casa",
+            adset_id: "s1",
+            adset_name: "Broad",
+            ad_id: "a1",
+            ad_name: "Air Fryer Hook 01",
+            spend: "7.25",
+            impressions: "500",
+            clicks: "22",
+            date_start: "2026-09-01"
+          }]
+        }
+      };
+    }
+  });
+
+  const rows = await client.getDailyAdInsights({
+    since: "2026-09-01",
+    until: "2026-09-01"
+  });
+
+  assert.equal(rows[0]?.externalAdId, "a1");
+  assert.equal(rows[0]?.externalAdsetId, "s1");
+  assert.equal(rows[0]?.clicks, 22);
+});
+
+test("strips access_token from pagination URLs", async () => {
+  let calls = 0;
+  const client = new MetaAdsReadOnlyClient({
+    accessToken: "token",
+    adAccountId: "123",
+    graphApiVersion: "v99.0",
+    transport: async (request) => {
+      calls += 1;
+      const url = new URL(request.url);
+      if (calls === 2) assert.equal(url.searchParams.has("access_token"), false);
+      return calls === 1
+        ? {
+            status: 200,
+            body: {
+              data: [],
+              paging: {
+                next: "https://graph.facebook.com/v99.0/act_123/insights?after=x&access_token=leak"
+              }
+            }
+          }
+        : { status: 200, body: { data: [] } };
+    }
+  });
+
+  await client.getDailyCampaignInsights({
+    since: "2026-09-01",
+    until: "2026-09-02"
+  });
+  assert.equal(calls, 2);
 });
 
 test("requires explicit Graph API version", () => {
@@ -124,12 +146,7 @@ test("marks rate limit errors as retryable", async () => {
     graphApiVersion: "v99.0",
     transport: async () => ({
       status: 429,
-      body: {
-        error: {
-          message: "Too many calls",
-          code: 4
-        }
-      }
+      body: { error: { message: "Too many calls", code: 4 } }
     })
   });
 

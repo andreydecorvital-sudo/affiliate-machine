@@ -277,6 +277,9 @@ export async function getSystemPageData() {
     "conversions",
     "commission_ledger",
     "paid_traffic_spend",
+    "paid_creatives",
+    "paid_creative_spend",
+    "paid_creative_metrics",
     "experiments",
     "distribution_experiments"
   ] as const;
@@ -292,7 +295,7 @@ export async function getSystemPageData() {
 
   const recentEvents = await safe(() =>
     supabase
-      .from("operational_events")
+      .from("universal_events")
       .select("id,event_type,source,entity_type,entity_id,created_at")
       .order("created_at", { ascending: false })
       .limit(20)
