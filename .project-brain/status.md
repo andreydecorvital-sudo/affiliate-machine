@@ -2,7 +2,7 @@
 
 ## Current phase
 
-`MONEY ENGINE — BACKEND LOOP READY / LIVE VALIDATION PENDING`
+`MONEY ENGINE — SUPABASE LIVE / VERCEL PREVIEW PENDING`
 
 ## Strategic priority
 
@@ -15,21 +15,22 @@ Visual relevante continua adiado até validação real de:
 ## Capability status
 
 ### Foundation
-- Platform foundation: CODE_READY / LIVE_DB_PENDING
+- Platform foundation: LIVE_DB_READY
+- Frontend Zero operator interface: CODE_READY / VERCEL_PREVIEW_PENDING
 - Next.js/Vercel minimal surface: CODE_READY / DEPLOY_PENDING
-- PostgreSQL schema: CODE_READY / MIGRATION_PENDING
+- PostgreSQL schema: LIVE_READY (20 migrations applied)
 - Supabase Queues: CODE_READY / LIVE_VALIDATION_PENDING
 - Supabase Cron: CODE_READY / LIVE_VALIDATION_PENDING
-- Universal events: CODE_READY / LIVE_VALIDATION_PENDING
-- Audit/idempotency: CODE_READY / LIVE_VALIDATION_PENDING
+- Universal events: LIVE_DB_READY / APP_TRAFFIC_PENDING
+- Audit/idempotency: LIVE_DB_READY / APP_TRAFFIC_PENDING
 - Gemini adapter: CODE_READY / API_KEY_PENDING
 
 ### Money Engine
 - Shopee Affiliate provider: CODE_READY / CREDENTIALS_PENDING
 - Hunter strategies: CODE_READY / LIVE_API_PENDING
-- Hunter run memory: CODE_READY / LIVE_DB_PENDING
-- Discovery niche/origin memory: CODE_READY / LIVE_DB_PENDING
-- Offer snapshots: CODE_READY / LIVE_DB_PENDING
+- Hunter run memory: LIVE_DB_READY / LIVE_API_PENDING
+- Discovery niche/origin memory: LIVE_DB_READY / LIVE_API_PENDING
+- Offer snapshots: LIVE_DB_READY / LIVE_API_PENDING
 - Affiliate link + Shopee subIds: CODE_READY / LIVE_API_PENDING
 - Score engine v1.1: CODE_READY / LIVE_DATA_PENDING
 - Product learning metrics: CODE_READY / LIVE_DATA_PENDING
@@ -40,17 +41,17 @@ Visual relevante continua adiado até validação real de:
 - Recent publication penalty: CODE_READY / LIVE_DATA_PENDING
 - 7-day product cooldown: CODE_READY / LIVE_DATA_PENDING
 - Opportunity decisions: CODE_READY / LIVE_DATA_PENDING
-- Shortlinks/click tracking: CODE_READY / LIVE_DB_PENDING
+- Shortlinks/click tracking: LIVE_DB_READY / LIVE_TRAFFIC_PENDING
 - WhatsApp multi-account bridge: CODE_READY / PAIRING_PENDING
 - Groups/capacity: CODE_READY / LIVE_SYNC_PENDING
-- Posts/deliveries: CODE_READY / LIVE_DB_PENDING
+- Posts/deliveries: LIVE_DB_READY / LIVE_SEND_PENDING
 - Distribution quota 35/day + 3/hour: CODE_READY / LIVE_VALIDATION_PENDING
 - Pre-send offer revalidation: CODE_READY / LIVE_API_PENDING
 - Per-delivery/group attribution links: CODE_READY / LIVE_API_PENDING
 - Acquisition group router: CODE_READY / LIVE_ROUTE_PENDING
 - UTM/campaign cohorts: CODE_READY / LIVE_TRAFFIC_PENDING
 - Conversion sync: CODE_READY / LIVE_API_PENDING
-- Commission ledger: CODE_READY / LIVE_DB_PENDING
+- Commission ledger: LIVE_DB_READY / LIVE_CONVERSION_PENDING
 - Conservative conversion attribution: CODE_READY / LIVE_CONVERSION_PENDING
 - EPC/group money analytics: CODE_READY / LIVE_DATA_PENDING
 - Money Cycle orchestrator: CODE_READY / LIVE_RUN_PENDING
@@ -73,8 +74,8 @@ Visual relevante continua adiado até validação real de:
 - Deterministic exploitation/exploration allocation: CODE_READY / LIVE_SAMPLE_PENDING
 
 ### Next blocker
-- Dedicated Supabase project + migrations: PENDING_USER_INFRA_PHASE
-- Vercel project/envs: PENDING_USER_INFRA_PHASE
+- Dedicated Supabase project + migrations: LIVE_READY (`vftnoaafqyqjydeflknl`, sa-east-1)
+- Vercel project/envs: PENDING_CONNECTOR_DEPLOY_ACCESS
 - Shopee affiliate credentials: PENDING
 - Gemini API key: PENDING
 - WhatsApp pairing + explicit group activation: PENDING
@@ -107,6 +108,21 @@ Visual relevante continua adiado até validação real de:
 - PR #11 — Paid Economics / Experiment Engine
 - PR #12 — Meta Ads Read-only Ingestion
 - PR #13 — Timing + Group Allocation Experiments
+- PR #14 — Frontend Zero Operator Interface
+
+## Live infrastructure
+
+- Supabase project: `affiliate-machine`
+- Project ref: `vftnoaafqyqjydeflknl`
+- Region: `sa-east-1`
+- Project URL: `https://vftnoaafqyqjydeflknl.supabase.co`
+- 20 migrations applied successfully
+- 10 Hunter strategies seeded
+- Supabase smoke test: quota ✅ money summary ✅ Hunter rank ✅ learning refresh ✅ distribution learning ✅
+- Safety flags: autopilot OFF ✅ Meta Ads write OFF ✅ WhatsApp real-send OFF ✅
+- Security advisor: no WARN/ERROR; RLS deny-by-default INFO only
+- Performance advisor: FK index issues resolved; only expected unused-index INFO on empty DB
+- Generated TypeScript database types committed
 
 ## Evidence
 
@@ -122,10 +138,12 @@ Visual relevante continua adiado até validação real de:
 - Paid Economics / Experiment Engine CI: typecheck ✅ tests ✅ build ✅
 - Meta Ads Read-only CI: typecheck ✅ tests ✅ build ✅
 - Timing + Group Allocation CI: typecheck ✅ tests ✅ build ✅
+- Frontend Zero Operator Interface CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
 Runtime/infrastructure target: Vercel + Supabase.
+Strict isolation from Argoplace: no shared database, no shared runtime/envs, and no inclusion in Argoplace plans/add-ons.
 Gemini remains the approved primary AI provider, with deterministic degradation when unavailable.
 
 Paid traffic economics keeps exact and modeled metrics separate.
