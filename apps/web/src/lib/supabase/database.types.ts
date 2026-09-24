@@ -1161,6 +1161,198 @@ export type Database = {
           },
         ]
       }
+      paid_creative_metrics: {
+        Row: {
+          cost_per_routed_visit: number | null
+          impressions: number
+          modeled_commission: number
+          modeled_commission_roas: number | null
+          modeled_net_commission: number
+          paid_creative_id: string
+          period_days: number
+          platform_clicks: number
+          raw_net_per_routed_visit: number | null
+          routed_visits: number
+          sample_confidence: number
+          smoothed_net_per_routed_visit: number | null
+          spend: number
+          updated_at: string
+        }
+        Insert: {
+          cost_per_routed_visit?: number | null
+          impressions?: number
+          modeled_commission?: number
+          modeled_commission_roas?: number | null
+          modeled_net_commission?: number
+          paid_creative_id: string
+          period_days: number
+          platform_clicks?: number
+          raw_net_per_routed_visit?: number | null
+          routed_visits?: number
+          sample_confidence?: number
+          smoothed_net_per_routed_visit?: number | null
+          spend?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_per_routed_visit?: number | null
+          impressions?: number
+          modeled_commission?: number
+          modeled_commission_roas?: number | null
+          modeled_net_commission?: number
+          paid_creative_id?: string
+          period_days?: number
+          platform_clicks?: number
+          raw_net_per_routed_visit?: number | null
+          routed_visits?: number
+          sample_confidence?: number
+          smoothed_net_per_routed_visit?: number | null
+          spend?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_creative_metrics_paid_creative_id_fkey"
+            columns: ["paid_creative_id"]
+            isOneToOne: true
+            referencedRelation: "paid_creatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_creative_spend: {
+        Row: {
+          created_at: string
+          currency: string
+          external_account_id: string
+          external_ad_id: string
+          external_adset_id: string | null
+          external_campaign_id: string
+          id: number
+          impressions: number
+          paid_creative_id: string
+          platform_clicks: number
+          provider: string
+          raw: Json
+          spend: number
+          spent_on: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          external_account_id: string
+          external_ad_id: string
+          external_adset_id?: string | null
+          external_campaign_id: string
+          id?: never
+          impressions?: number
+          paid_creative_id: string
+          platform_clicks?: number
+          provider: string
+          raw?: Json
+          spend?: number
+          spent_on: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          external_account_id?: string
+          external_ad_id?: string
+          external_adset_id?: string | null
+          external_campaign_id?: string
+          id?: never
+          impressions?: number
+          paid_creative_id?: string
+          platform_clicks?: number
+          provider?: string
+          raw?: Json
+          spend?: number
+          spent_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_creative_spend_paid_creative_id_fkey"
+            columns: ["paid_creative_id"]
+            isOneToOne: false
+            referencedRelation: "paid_creatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_creatives: {
+        Row: {
+          ad_name: string | null
+          adset_name: string | null
+          campaign_id: string | null
+          campaign_name: string | null
+          created_at: string
+          creative_key: string | null
+          creative_name: string | null
+          external_account_id: string
+          external_ad_id: string
+          external_adset_id: string | null
+          external_campaign_id: string
+          external_creative_id: string | null
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          metadata: Json
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          ad_name?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          created_at?: string
+          creative_key?: string | null
+          creative_name?: string | null
+          external_account_id: string
+          external_ad_id: string
+          external_adset_id?: string | null
+          external_campaign_id: string
+          external_creative_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metadata?: Json
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          ad_name?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          created_at?: string
+          creative_key?: string | null
+          creative_name?: string | null
+          external_account_id?: string
+          external_ad_id?: string
+          external_adset_id?: string | null
+          external_campaign_id?: string
+          external_creative_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metadata?: Json
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "traffic_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       paid_traffic_campaign_links: {
         Row: {
           campaign_id: string | null
@@ -2041,6 +2233,19 @@ export type Database = {
           strategy_id: string
         }[]
       }
+      link_paid_creative: {
+        Args: {
+          p_campaign_key: string
+          p_creative_key: string
+          p_paid_creative_id: string
+        }
+        Returns: {
+          campaign_id: string
+          campaign_key: string
+          creative_key: string
+          paid_creative_id: string
+        }[]
+      }
       link_paid_traffic_campaign: {
         Args: { p_campaign_key: string; p_link_id: string }
         Returns: {
@@ -2102,6 +2307,27 @@ export type Database = {
           utm_campaign: string
           utm_medium: string
           utm_source: string
+        }[]
+      }
+      paid_creative_performance: {
+        Args: { p_days?: number }
+        Returns: {
+          ad_name: string
+          adset_name: string
+          campaign_id: string
+          campaign_name: string
+          cost_per_routed_visit: number
+          creative_key: string
+          external_ad_id: string
+          impressions: number
+          modeled_commission: number
+          modeled_commission_roas: number
+          modeled_net_commission: number
+          paid_creative_id: string
+          platform_clicks: number
+          provider: string
+          routed_visits: number
+          spend: number
         }[]
       }
       paid_group_economics: {
@@ -2214,6 +2440,14 @@ export type Database = {
           strategy_rows: number
         }[]
       }
+      refresh_paid_creative_learning: {
+        Args: { p_days?: number }
+        Returns: {
+          creative_rows: number
+          global_modeled_net: number
+          global_routed_visits: number
+        }[]
+      }
       resolve_short_link: {
         Args: { p_code: string }
         Returns: {
@@ -2242,6 +2476,10 @@ export type Database = {
           routed_niche: string
           visit_id: string
         }[]
+      }
+      unlink_paid_creative: {
+        Args: { p_paid_creative_id: string }
+        Returns: boolean
       }
       unlink_paid_traffic_campaign: {
         Args: { p_link_id: string }

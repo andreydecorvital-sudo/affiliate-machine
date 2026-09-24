@@ -17,6 +17,7 @@ const schema = z.object({
   conversionDays: z.number().int().min(1).max(90).default(7),
   learningDays: z.number().int().min(7).max(365).default(90),
   distributionLearningDays: z.number().int().min(7).max(365).default(90),
+  creativeLearningDays: z.number().int().min(7).max(365).default(30),
   syncConversions: z.boolean().default(true),
   niche: z.string().trim().min(1).max(80).default("general")
 });

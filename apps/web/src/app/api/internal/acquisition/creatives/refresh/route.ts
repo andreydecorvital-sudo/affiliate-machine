@@ -1,25 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isInternalRequestAuthorized } from "@/lib/internal-auth";
-import { syncMetaAdsInsights } from "@/lib/meta/sync";
+import { refreshPaidCreativeLearning } from "@/lib/acquisition/paid-creatives";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
 
 const schema = z.object({
-  since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  maxPages: z.number().int().min(1).max(100).default(20),
-  includeCreatives: z.boolean().default(true)
-}).superRefine((value, ctx) => {
-  if (value.until < value.since) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["until"],
-      message: "until must be greater than or equal to since"
-    });
-  }
+  days: z.number().int().min(7).max(365).default(30)
 });
 
 export async function POST(request: NextRequest) {
@@ -38,7 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     return NextResponse.json({
       ok: true,
-      result: await syncMetaAdsInsights(parsed.data)
+      result: await refreshPaidCreativeLearning(parsed.data.days)
     });
   } catch (error) {
     return NextResponse.json(

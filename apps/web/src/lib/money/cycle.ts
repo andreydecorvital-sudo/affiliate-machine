@@ -2,6 +2,7 @@ import { syncShopeeOffers, syncShopeeConversions } from "@/lib/shopee/sync";
 import { runHunter } from "@/lib/hunter/run";
 import { refreshLearningMetrics } from "@/lib/learning/learning";
 import { refreshDistributionPerformance } from "@/lib/distribution/learning";
+import { refreshPaidCreativeLearning } from "@/lib/acquisition/paid-creatives";
 import { scoreUnscoredOffers } from "@/lib/intelligence/score-sync";
 import { materializePublishablePosts } from "@/lib/distribution/materialize";
 import { processNextDelivery } from "@/lib/distribution/process";
@@ -18,6 +19,7 @@ type MoneyCycleInput = {
   conversionDays?: number;
   learningDays?: number;
   distributionLearningDays?: number;
+  creativeLearningDays?: number;
   syncConversions?: boolean;
   niche?: string;
 };
@@ -106,6 +108,10 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
     Math.max(input.distributionLearningDays ?? 90, 7),
     365
   );
+  const creativeLearningDays = Math.min(
+    Math.max(input.creativeLearningDays ?? 30, 7),
+    365
+  );
   const niche = input.niche?.trim() || "general";
   const keyword = input.keyword?.trim() || null;
 
@@ -156,6 +162,10 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
     refreshDistributionPerformance(distributionLearningDays)
   );
 
+  const creativeLearning = await runStep(() =>
+    refreshPaidCreativeLearning(creativeLearningDays)
+  );
+
   const scoring = await runStep(() => scoreUnscoredOffers(scoreLimit));
 
   const materialization = await runStep(() =>
@@ -186,6 +196,7 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
       conversionDays,
       learningDays,
       distributionLearningDays,
+      creativeLearningDays,
       syncConversions: input.syncConversions !== false,
       niche
     },
@@ -194,6 +205,7 @@ export async function runMoneyCycle(input: MoneyCycleInput = {}) {
       conversions,
       learning,
       distributionLearning,
+      creativeLearning,
       scoring,
       materialization,
       distribution,

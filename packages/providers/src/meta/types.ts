@@ -15,6 +15,21 @@ export type MetaCampaignInsight = {
   raw: Record<string, unknown>;
 };
 
+export type MetaAdInsight = {
+  externalAccountId: string;
+  externalCampaignId: string;
+  campaignName: string | null;
+  externalAdsetId: string | null;
+  adsetName: string | null;
+  externalAdId: string;
+  adName: string | null;
+  spentOn: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  raw: Record<string, unknown>;
+};
+
 export type MetaInsightsParams = {
   since: string;
   until: string;
@@ -22,7 +37,7 @@ export type MetaInsightsParams = {
   pageLimit?: number;
 };
 
-export type MetaInsightsSyncPage = {
-  items: MetaCampaignInsight[];
+export type MetaInsightsSyncPage<T> = {
+  items: T[];
   nextUrl: string | null;
 };
