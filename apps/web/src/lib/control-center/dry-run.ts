@@ -3,6 +3,7 @@ import { getFeatureGates, type FeatureGateState } from "@/lib/feature-gates";
 import { runHunter } from "@/lib/hunter/run";
 import { scoreUnscoredOffers } from "@/lib/intelligence/score-sync";
 import { recordOperationalEvent } from "@/lib/events";
+import { getPipelineSnapshot } from "@/lib/control-center/pipeline-snapshot";
 
 export type DryRunMode = "probe" | "pipeline";
 export type DryRunStepName =
@@ -23,6 +24,16 @@ export type DryRunStep = {
 
 export function isDryRunSafetyClosed(gates: FeatureGateState): boolean {
   return !gates.autopilot && !gates.whatsappRealSend && !gates.metaAdsWrite;
+}
+
+export function hasOutboundArtifactDelta(
+  before: { counts: { posts: number; deliveries: number } },
+  after: { counts: { posts: number; deliveries: number } }
+): boolean {
+  return (
+    after.counts.posts !== before.counts.posts ||
+    after.counts.deliveries !== before.counts.deliveries
+  );
 }
 
 export function getDryRunExecutionPlan(mode: DryRunMode): DryRunStepName[] {
@@ -244,6 +255,8 @@ export async function runControlCenterDryRun(input: {
     };
   }
 
+  const beforeSnapshot = await getPipelineSnapshot();
+
   const hunter = await runStep(
     "hunter",
     () => runHunter({ strategyLimit }),
@@ -279,7 +292,12 @@ export async function runControlCenterDryRun(input: {
   );
   steps.push(score.step);
 
-  const ok = score.step.status === "success";
+  const afterSnapshot = await getPipelineSnapshot();
+  const outboundArtifactDelta = hasOutboundArtifactDelta(
+    beforeSnapshot,
+    afterSnapshot
+  );
+  const ok = score.step.status === "success" && !outboundArtifactDelta;
 
   await recordOperationalEvent({
     eventType: "control_center.dry_run.completed",
@@ -298,7 +316,22 @@ export async function runControlCenterDryRun(input: {
         materialization: false,
         delivery: false,
         metaWrite: false,
-        whatsappSend: false
+        whatsappSend: false,
+        outboundArtifactDelta
+      },
+      pipelineDelta: {
+        hunterRuns:
+          afterSnapshot.counts.hunterRuns - beforeSnapshot.counts.hunterRuns,
+        products:
+          afterSnapshot.counts.products - beforeSnapshot.counts.products,
+        offers:
+          afterSnapshot.counts.offers - beforeSnapshot.counts.offers,
+        scores:
+          afterSnapshot.counts.scores - beforeSnapshot.counts.scores,
+        posts:
+          afterSnapshot.counts.posts - beforeSnapshot.counts.posts,
+        deliveries:
+          afterSnapshot.counts.deliveries - beforeSnapshot.counts.deliveries
       }
     }
   }).catch(() => undefined);
@@ -309,14 +342,36 @@ export async function runControlCenterDryRun(input: {
     mode,
     startedAt,
     finishedAt: new Date().toISOString(),
-    reason: ok ? null : "score_failed",
+    reason:
+      outboundArtifactDelta
+        ? "outbound_artifact_delta_detected"
+        : ok
+          ? null
+          : "score_failed",
     executionPlan,
     steps,
+    beforeSnapshot,
+    afterSnapshot,
+    pipelineDelta: {
+      hunterRuns:
+        afterSnapshot.counts.hunterRuns - beforeSnapshot.counts.hunterRuns,
+      products:
+        afterSnapshot.counts.products - beforeSnapshot.counts.products,
+      offers:
+        afterSnapshot.counts.offers - beforeSnapshot.counts.offers,
+      scores:
+        afterSnapshot.counts.scores - beforeSnapshot.counts.scores,
+      posts:
+        afterSnapshot.counts.posts - beforeSnapshot.counts.posts,
+      deliveries:
+        afterSnapshot.counts.deliveries - beforeSnapshot.counts.deliveries
+    },
     safety: {
       materializationAllowed: false,
       deliveryAllowed: false,
       metaWriteAllowed: false,
-      whatsappSendAllowed: false
+      whatsappSendAllowed: false,
+      outboundArtifactDelta
     },
     boundary:
       "Dry-run ends after scoring. It never materializes posts/deliveries and never calls a real-send or ads-write path."
