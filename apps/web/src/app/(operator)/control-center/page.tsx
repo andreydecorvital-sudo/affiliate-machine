@@ -15,6 +15,29 @@ function pillState(state: string) {
   return "muted" as const;
 }
 
+const actionByKey: Record<string, string> = {
+  supabase:
+    "Adicionar NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SECRET_KEY na Vercel.",
+  "internal-secret":
+    "Criar um INTERNAL_JOB_SECRET forte para proteger os endpoints internos.",
+  "app-url":
+    "Definir NEXT_PUBLIC_APP_URL com https://affiliate-machine-vitaldecor.vercel.app.",
+  shopee:
+    "Adicionar SHOPEE_AFFILIATE_APP_ID e SHOPEE_AFFILIATE_SECRET.",
+  gemini:
+    "Adicionar GEMINI_API_KEY para liberar geração e avaliação de copy.",
+  "whatsapp-account":
+    "Parear uma única conta WhatsApp; o envio real continuará desligado.",
+  "whatsapp-group":
+    "Selecionar somente 1 grupo para o canário e liberar accepting_traffic.",
+  "meta-write":
+    "Desligar META_ADS_WRITE_ENABLED antes de qualquer canário.",
+  autopilot:
+    "Desligar AUTOPILOT_ENABLED; o primeiro ciclo deve continuar manual.",
+  "whatsapp-send":
+    "Manter WHATSAPP_REAL_SEND_ENABLED=0 fora da janela controlada."
+};
+
 export default async function ControlCenterPage() {
   const data = await getCanaryReadiness();
   const ready = data.checks.filter((item) => item.state === "ready").length;
@@ -22,13 +45,23 @@ export default async function ControlCenterPage() {
   const warnings = data.checks.filter(
     (item) => item.state === "warning"
   ).length;
+  const manualActions = data.checks
+    .filter(
+      (item) =>
+        ["blocked", "warning"].includes(item.state) &&
+        Boolean(actionByKey[item.key])
+    )
+    .map((item) => ({
+      ...item,
+      action: actionByKey[item.key]
+    }));
 
   return (
     <main className="page">
       <PageHeader
         eyebrow="CANARY READINESS"
         title="Control Center"
-        description="O gate operacional antes de colocar dinheiro, tráfego e WhatsApp real na máquina. Se algo crítico estiver quebrado, o canário não deve começar."
+        description="O painel mostra o que já está pronto, o que ainda depende de uma configuração sua e mantém qualquer envio real bloqueado até o canário."
         actions={
           <StatusPill
             state={
@@ -58,9 +91,10 @@ export default async function ControlCenterPage() {
           tone={blocked > 0 ? "warning" : "positive"}
         />
         <MetricCard
-          label="Avisos"
-          value={String(warnings)}
-          hint="não bloqueiam sozinhos"
+          label="Ações suas"
+          value={String(manualActions.length)}
+          hint={warnings > 0 ? `${warnings} aviso(s) incluído(s)` : "pendências de configuração"}
+          tone={manualActions.length > 0 ? "warning" : "positive"}
         />
         <MetricCard
           label="Dry-run"
@@ -68,6 +102,71 @@ export default async function ControlCenterPage() {
           hint="sem envio real"
           tone={data.readiness.dryRunReady ? "positive" : "warning"}
         />
+      </section>
+
+      <section className="content-grid content-grid-wide">
+        <Panel title="O que falta de você" eyebrow="ACTION QUEUE">
+          {manualActions.length === 0 ? (
+            <div className="issue-card">
+              <StatusPill state="good">Sem ação manual</StatusPill>
+              <strong>Nenhuma configuração sua está bloqueando a próxima etapa.</strong>
+              <p>A máquina pode seguir para os probes e dry-run controlado.</p>
+            </div>
+          ) : (
+            <div className="issue-stack">
+              {manualActions.map((item) => (
+                <div className="issue-card" key={item.key}>
+                  <StatusPill state={pillState(item.state)}>
+                    {item.requiredForDryRun ? "Antes do dry-run" : "Antes do canário"}
+                  </StatusPill>
+                  <strong>{item.label}</strong>
+                  <p>{item.action}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Próximo passo da máquina" eyebrow="SAFE EXECUTION">
+          <div className="checklist">
+            <div data-done={data.db.ok}>
+              <i />
+              Validar RPCs e acesso ao banco
+            </div>
+            <div data-done={data.readiness.dryRunReady}>
+              <i />
+              Liberar Hunter/score/link em dry-run
+            </div>
+            <div data-done={data.db.pairedAccounts > 0}>
+              <i />
+              Reconhecer 1 conta de distribuição
+            </div>
+            <div data-done={data.db.acceptingGroups > 0}>
+              <i />
+              Isolar 1 grupo de canário
+            </div>
+            <div data-done={!data.gates.whatsappRealSend}>
+              <i />
+              Manter envio real fechado
+            </div>
+          </div>
+
+          <div className="issue-card" style={{ marginTop: 12 }}>
+            <StatusPill
+              state={data.readiness.dryRunReady ? "good" : "muted"}
+            >
+              {data.readiness.dryRunReady ? "Próximo: dry-run" : "Aguardando setup"}
+            </StatusPill>
+            <strong>
+              {data.readiness.dryRunReady
+                ? "A próxima execução pode ser totalmente sem envio externo."
+                : "A máquina não vai tentar contornar credenciais ou gates ausentes."}
+            </strong>
+            <p>
+              Autopilot, WhatsApp real-send e escrita em Meta continuam fail-closed.
+            </p>
+          </div>
+        </Panel>
       </section>
 
       <section className="content-grid content-grid-wide">
@@ -139,9 +238,8 @@ export default async function ControlCenterPage() {
                 : "Ainda existem blockers críticos."}
             </strong>
             <p>
-              O WhatsApp real-send continua sendo um gate separado. Mesmo com
-              tudo verde, ele só deve ser ligado durante uma janela controlada
-              de canário.
+              Mesmo quando tudo estiver verde, o envio real só deve ser ativado
+              durante uma janela controlada.
             </p>
           </div>
         </Panel>
