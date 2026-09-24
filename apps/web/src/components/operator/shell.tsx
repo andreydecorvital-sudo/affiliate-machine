@@ -70,9 +70,14 @@ export function OperatorShell({
             <Link href="/system" className="ghost-button">
               Ver arquitetura
             </Link>
+            <form action="/api/auth/logout" method="post">
+              <button className="ghost-button" type="submit">
+                Sair
+              </button>
+            </form>
             <span className="environment-pill">
               <i />
-              Preview seguro
+              Privado
             </span>
           </div>
         </header>
