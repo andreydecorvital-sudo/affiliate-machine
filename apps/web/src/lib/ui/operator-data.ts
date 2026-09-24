@@ -15,7 +15,9 @@ type SafeResult<T> = {
   error: string | null;
 };
 
-async function safe<T>(fn: () => Promise<T>): Promise<SafeResult<T>> {
+async function safe<T>(
+  fn: () => PromiseLike<T> | T
+): Promise<SafeResult<T>> {
   try {
     return { ok: true, data: await fn(), error: null };
   } catch (error) {
