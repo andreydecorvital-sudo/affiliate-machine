@@ -4,13 +4,22 @@ const emptyToUndefined = (value: unknown) =>
   typeof value === "string" && value.trim() === "" ? undefined : value;
 
 const optionalString = (min = 1) =>
-  z.preprocess(emptyToUndefined, z.string().min(min).optional());
+  z.preprocess(
+    emptyToUndefined,
+    z.string().min(min).optional()
+  ).catch(undefined);
 
 const optionalUrl = () =>
-  z.preprocess(emptyToUndefined, z.string().url().optional());
+  z.preprocess(
+    emptyToUndefined,
+    z.string().url().optional()
+  ).catch(undefined);
 
 const optionalGate = () =>
-  z.preprocess(emptyToUndefined, z.enum(["0", "1"]).default("0"));
+  z.preprocess(
+    emptyToUndefined,
+    z.enum(["0", "1"]).default("0")
+  ).catch("0");
 
 const serverSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: optionalUrl(),
@@ -23,13 +32,13 @@ const serverSchema = z.object({
   GEMINI_MODEL: z.preprocess(
     emptyToUndefined,
     z.string().min(1).default("gemini-flash-latest")
-  ),
+  ).catch("gemini-flash-latest"),
   SHOPEE_AFFILIATE_APP_ID: optionalString(),
   SHOPEE_AFFILIATE_SECRET: optionalString(),
   SHOPEE_AFFILIATE_GRAPHQL_URL: z.preprocess(
     emptyToUndefined,
     z.string().url().default("https://open-api.affiliate.shopee.com.br/graphql")
-  ),
+  ).catch("https://open-api.affiliate.shopee.com.br/graphql"),
   INTERNAL_JOB_SECRET: optionalString(16),
   AUTOPILOT_ENABLED: optionalGate(),
   WHATSAPP_REAL_SEND_ENABLED: optionalGate(),
@@ -39,11 +48,11 @@ const serverSchema = z.object({
   META_GRAPH_API_VERSION: z.preprocess(
     emptyToUndefined,
     z.string().regex(/^v\d+\.\d+$/).optional()
-  ),
+  ).catch(undefined),
   META_GRAPH_BASE_URL: z.preprocess(
     emptyToUndefined,
     z.string().url().default("https://graph.facebook.com")
-  )
+  ).catch("https://graph.facebook.com")
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
