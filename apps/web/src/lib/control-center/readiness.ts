@@ -156,12 +156,12 @@ export async function getCanaryReadiness() {
     {
       key: "gemini",
       label: "Gemini",
-      state: hasGemini ? "ready" : "blocked",
+      state: hasGemini ? "ready" : "optional",
       detail: hasGemini
         ? "API key configurada."
-        : "GEMINI_API_KEY pendente.",
-      requiredForDryRun: true,
-      requiredForRealCanary: true
+        : "Opcional para o dry-run Hunter + score e para o primeiro canário determinístico.",
+      requiredForDryRun: false,
+      requiredForRealCanary: false
     },
     {
       key: "whatsapp-account",
@@ -228,10 +228,10 @@ export async function getCanaryReadiness() {
   ];
 
   const dryRunBlockers = checks.filter(
-    (item) => item.requiredForDryRun && item.state === "blocked"
+    (item) => item.requiredForDryRun && item.state !== "ready"
   );
   const realCanaryBlockers = checks.filter(
-    (item) => item.requiredForRealCanary && item.state === "blocked"
+    (item) => item.requiredForRealCanary && item.state !== "ready"
   );
 
   return {
