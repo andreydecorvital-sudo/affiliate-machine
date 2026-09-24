@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   getDryRunExecutionPlan,
+  hasOutboundArtifactDelta,
   isDryRunSafetyClosed
 } from "../src/lib/control-center/dry-run";
 
@@ -66,4 +67,30 @@ test("pipeline dry-run stops after scoring", () => {
   assert.equal(plan.includes("delivery" as never), false);
   assert.equal(plan.includes("meta_write" as never), false);
   assert.equal(plan.includes("whatsapp_send" as never), false);
+});
+
+
+test("dry-run fails closed if posts or deliveries change", () => {
+  const before = { counts: { posts: 4, deliveries: 9 } };
+
+  assert.equal(
+    hasOutboundArtifactDelta(before, {
+      counts: { posts: 4, deliveries: 9 }
+    }),
+    false
+  );
+
+  assert.equal(
+    hasOutboundArtifactDelta(before, {
+      counts: { posts: 5, deliveries: 9 }
+    }),
+    true
+  );
+
+  assert.equal(
+    hasOutboundArtifactDelta(before, {
+      counts: { posts: 4, deliveries: 10 }
+    }),
+    true
+  );
 });
