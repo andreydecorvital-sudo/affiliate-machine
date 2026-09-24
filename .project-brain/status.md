@@ -66,6 +66,12 @@ Visual relevante continua adiado até validação real de:
 - Meta Ads daily campaign insights sync: CODE_READY / LIVE_API_PENDING
 - Meta campaign mapping to UTM campaignKey: CODE_READY / LIVE_MAPPING_PENDING
 - Meta campaign spend → paid economics: CODE_READY / LIVE_DATA_PENDING
+- Meta ad-level creative ingestion: CODE_READY / LIVE_API_PENDING
+- Paid creative spend store: LIVE_DB_READY / LIVE_API_PENDING
+- Creative campaignKey + creativeKey mapping: LIVE_DB_READY / LIVE_MAPPING_PENDING
+- Creative routed-visit attribution via utm_content: LIVE_DB_READY / LIVE_TRAFFIC_PENDING
+- Paid creative performance learning: LIVE_DB_READY / LIVE_SAMPLE_PENDING
+- Creative modeled commission/net/ROAS: LIVE_DB_READY / LIVE_SAMPLE_PENDING
 - Distribution timing learning: CODE_READY / LIVE_SAMPLE_PENDING
 - Group performance learning: CODE_READY / LIVE_SAMPLE_PENDING
 - Timing baseline/treatment experiments: CODE_READY / LIVE_SAMPLE_PENDING
@@ -82,9 +88,9 @@ Visual relevante continua adiado até validação real de:
 - one controlled end-to-end canary: PENDING
 
 ### Next code opportunity
-- acquisition creative attribution: NEXT
-- paid creative performance learning: NEXT
 - canary readiness report: NEXT
+- operator authentication before public Vercel production: NEXT
+- creative mapping controls in UI: NEXT
 
 ### Later
 - TikTok/Amazon affiliate providers: FUTURE
@@ -109,6 +115,7 @@ Visual relevante continua adiado até validação real de:
 - PR #12 — Meta Ads Read-only Ingestion
 - PR #13 — Timing + Group Allocation Experiments
 - PR #14 — Frontend Zero Operator Interface
+- PR #15 — Creative Attribution + Paid Creative Learning
 
 ## Live infrastructure
 
@@ -116,9 +123,9 @@ Visual relevante continua adiado até validação real de:
 - Project ref: `vftnoaafqyqjydeflknl`
 - Region: `sa-east-1`
 - Project URL: `https://vftnoaafqyqjydeflknl.supabase.co`
-- 20 migrations applied successfully
+- 21 migrations applied successfully
 - 10 Hunter strategies seeded
-- Supabase smoke test: quota ✅ money summary ✅ Hunter rank ✅ learning refresh ✅ distribution learning ✅
+- Supabase smoke test: quota ✅ money summary ✅ Hunter rank ✅ learning refresh ✅ distribution learning ✅ creative performance ✅ creative learning ✅ creative link/unlink ✅
 - Safety flags: autopilot OFF ✅ Meta Ads write OFF ✅ WhatsApp real-send OFF ✅
 - Security advisor: no WARN/ERROR; RLS deny-by-default INFO only
 - Performance advisor: FK index issues resolved; only expected unused-index INFO on empty DB
@@ -139,6 +146,7 @@ Visual relevante continua adiado até validação real de:
 - Meta Ads Read-only CI: typecheck ✅ tests ✅ build ✅
 - Timing + Group Allocation CI: typecheck ✅ tests ✅ build ✅
 - Frontend Zero Operator Interface CI: typecheck ✅ tests ✅ build ✅
+- Creative Attribution + Paid Learning CI: typecheck ✅ tests ✅ build ✅
 
 ## Architecture decision
 
