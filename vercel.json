@@ -3,5 +3,13 @@
   "framework": "nextjs",
   "installCommand": "pnpm install --frozen-lockfile --fetch-retries=5",
   "buildCommand": "pnpm build",
-  "outputDirectory": "apps/web/.next"
+  "outputDirectory": "apps/web/.next",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://vftnoaafqyqjydeflknl.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_Z85SPOImGG1rWot8E1DBKg_YHkVnszK",
+    "NEXT_PUBLIC_APP_URL": "https://affiliate-machine-vitaldecor.vercel.app",
+    "AUTOPILOT_ENABLED": "0",
+    "WHATSAPP_REAL_SEND_ENABLED": "0",
+    "META_ADS_WRITE_ENABLED": "0"
+  }
 }
