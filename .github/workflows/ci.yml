@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -22,3 +25,24 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+      - name: Commit generated pnpm lockfile
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "pnpm-lock.yaml was not generated"
+            exit 1
+          fi
+
+          git add pnpm-lock.yaml
+
+          if git diff --cached --quiet; then
+            echo "pnpm-lock.yaml already committed"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: lock pnpm dependencies"
+          git push
