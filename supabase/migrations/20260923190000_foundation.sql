@@ -263,7 +263,8 @@ begin
     p_correlation_id,
     coalesce(p_payload, '{}'::jsonb)
   )
-  on conflict (idempotency_key)\n  do update set idempotency_key = excluded.idempotency_key
+  on conflict (idempotency_key)
+  do update set idempotency_key = excluded.idempotency_key
   returning id into event_id;
 
   return event_id;
